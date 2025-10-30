@@ -69,49 +69,4 @@ var _ = Describe("Service.Inflate()", func() {
 			})
 		}
 	})
-
-	Context("argocd.loginCommandArgs", func() {
-		BeforeEach(func() {
-			service.DestinationGroups = DestinationGroups{
-				{
-					Destinations: Destinations{
-						{},
-					},
-				},
-			}
-		})
-
-		type TableEntry struct {
-			serviceLevel []string
-			groupLevel   []string
-			destLevel    []string
-
-			expected []string
-		}
-
-		for _, entry := range []TableEntry{
-			{[]string{"top"}, nil, nil, []string{"top"}},
-			{nil, []string{"group"}, nil, []string{"group"}},
-			{[]string{"top"}, []string{"group"}, nil, []string{"group"}},
-			{nil, nil, []string{"dest"}, []string{"dest"}},
-			{nil, []string{"group"}, []string{"dest"}, []string{"dest"}},
-			{[]string{"top"}, []string{"group"}, []string{"dest"}, []string{"dest"}},
-		} {
-			Context("entry", func() {
-				BeforeEach(func() {
-					service.ArgoCD.LoginCommandArgs = entry.serviceLevel
-					service.DestinationGroups[0].ArgoCD.LoginCommandArgs = entry.groupLevel
-					service.DestinationGroups[0].Destinations[0].ArgoCD.LoginCommandArgs = entry.destLevel
-				})
-
-				It(fmt.Sprintf("should set namespace to %s", entry.expected), func() {
-					for _, group := range service.DestinationGroups {
-						for _, destination := range group.Destinations {
-							Expect(destination.ArgoCD.LoginCommandArgs).To(Equal(entry.expected))
-						}
-					}
-				})
-			})
-		}
-	})
 })

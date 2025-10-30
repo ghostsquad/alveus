@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: example-service-kube-local
+  name: example-service-staging-kube-local
   namespace: argocd
 spec:
   destination:

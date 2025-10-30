@@ -23,10 +23,12 @@ type Service struct {
 }
 
 type ArgoCD struct {
-	LoginCommandArgs []string                `json:"loginCommandArgs,omitempty"`
-	UseKubeContext   *string                 `json:"useKubeContext,omitempty"`
-	Source           Source                  `json:"source,omitempty,omitzero"`
-	SyncPolicy       argov1alpha1.SyncPolicy `json:"syncPolicy,omitempty,omitzero"`
+	ExtraArgs           []string                `json:"extraArgs,omitempty"`
+	SyncTimeoutSeconds  *int                    `json:"syncTimeoutSeconds,omitempty"`
+	SyncRetryLimit      *int                    `json:"syncRetryLimit,omitempty"`
+	ApplicationFilePath string                  `json:"applicationFilePath,omitempty"`
+	Source              Source                  `json:"source,omitempty,omitzero"`
+	SyncPolicy          argov1alpha1.SyncPolicy `json:"syncPolicy,omitempty,omitzero"`
 }
 
 type Github struct {
@@ -35,11 +37,11 @@ type Github struct {
 	PostDeploySteps []gocto.Step         `json:"postDeploySteps,omitempty"`
 	ExtraDeployJobs map[string]gocto.Job `json:"extraDeployJobs,omitempty"`
 	Secrets         *gocto.Secrets       `json:"secrets,omitempty"`
+	Env             map[string]string    `json:"env,omitempty,omitzero"`
 }
 
 type ApplicationNameUniquenessStrategy struct {
 	IncludeDestinationNamespace bool `json:"usingManyNamespaces,omitempty,omitzero"`
-	IncludeGroup                bool `json:"includeGroup,omitempty,omitzero"`
 }
 
 func (s *Service) Validate() error {

@@ -13,8 +13,6 @@ import (
 func newDeployGroupJob(name string, wf gocto.Workflow) gocto.Job {
 	workflowPath := "./" + wf.GetRelativePathAndFilename()
 
-	godump.Dump(workflowPath)
-
 	job := gocto.Job{
 		Name: name,
 		Uses: workflowPath,
@@ -29,10 +27,9 @@ func newDeployGroupJob(name string, wf gocto.Workflow) gocto.Job {
 type newDeployJobInput struct {
 	name                 string
 	destination          v1alpha1.Destination
+	destinationGroup     string
 	checkoutCommitBranch string
-	appFilePath          string
 	argoCDSpec           v1alpha1.ArgoCD
-	syncTimeoutSeconds   int
 }
 
 func newDeployJob(input newDeployJobInput) gocto.Job {
@@ -43,10 +40,6 @@ func newDeployJob(input newDeployJobInput) gocto.Job {
 
 	name := input.name
 	destination := input.destination
-
-	if input.syncTimeoutSeconds == 0 {
-		input.syncTimeoutSeconds = 300
-	}
 
 	destinationFriendlyName := v1alpha1.CoalesceSanitizeDestination(destination)
 
@@ -80,7 +73,7 @@ func newDeployJob(input newDeployJobInput) gocto.Job {
 			Name: "update-application-yaml",
 			Run: util.SprintfDedent(`
 					yq e -i '.spec.source.targetRevision = "${{ github.sha }}"' \
-					"${%s}"
+						"${%s}"
 				`, EnvNameArgoCDApplicationFile),
 		},
 		gocto.Step{
@@ -94,38 +87,9 @@ func newDeployJob(input newDeployJobInput) gocto.Job {
 					fi
 				`, EnvNameArgoCDApplicationFile, EnvNameGitCommitMessage),
 		},
-		gocto.Step{
-			Uses: "actions-js/push@v1.5",
-			With: map[string]any{
-				"github_token": "${{ secrets.GITHUB_TOKEN }}",
-				"branch":       input.checkoutCommitBranch,
-			},
-		},
 	)
 
-	var extraArgoCDArgs []string
-
-	if input.argoCDSpec.UseKubeContext == nil || *input.argoCDSpec.UseKubeContext == "" {
-		steps = append(steps,
-			gocto.Step{
-				Name: "argocd-login",
-				Run: util.SprintfDedent(`
-						argocd login \
-							%s \
-							--grpc-web \
-							--skip-test-tls \
-							;
-					`, util.Join(` \`+"\n  ", input.argoCDSpec.LoginCommandArgs...)),
-			},
-		)
-		extraArgoCDArgs = append(extraArgoCDArgs, "--grpc-web")
-	} else {
-		extraArgoCDArgs = append(extraArgoCDArgs,
-			"--core",
-			"--kube-context", *input.argoCDSpec.UseKubeContext)
-	}
-
-	extraArgoCDArgsString := util.Join(" ", extraArgoCDArgs...)
+	extraArgoCDArgsString := util.Join(" ", input.argoCDSpec.ExtraArgs...)
 
 	steps = append(steps,
 		gocto.Step{
@@ -135,6 +99,8 @@ func newDeployJob(input newDeployJobInput) gocto.Job {
 						%s \
 						--upsert \
 						--file "${%s}" \
+						--sync-policy=none \
+						--prompts-enabled=false \
 						;
 				`, extraArgoCDArgsString, EnvNameArgoCDApplicationFile),
 		},
@@ -144,8 +110,12 @@ func newDeployJob(input newDeployJobInput) gocto.Job {
 					argocd app sync \
 						%s \
 						--timeout %d \
+						--retry-limit %d \
 						;
-				`, extraArgoCDArgsString, input.syncTimeoutSeconds),
+				`, extraArgoCDArgsString,
+				*input.argoCDSpec.SyncTimeoutSeconds,
+				*input.argoCDSpec.SyncRetryLimit,
+			),
 		})
 
 	steps = append(steps, input.destination.Github.PostDeploySteps...)
@@ -159,8 +129,12 @@ func newDeployJob(input newDeployJobInput) gocto.Job {
 			},
 		},
 		Env: map[string]string{
-			EnvNameArgoCDApplicationFile: input.appFilePath,
-			EnvNameGitCommitMessage:      fmt.Sprintf("feat: 🚀 deploy to %s", destinationFriendlyName),
+			EnvNameArgoCDApplicationFile: input.argoCDSpec.ApplicationFilePath,
+			EnvNameGitCommitMessage: fmt.Sprintf(
+				"feat(%s): 🚀 deploy to %s",
+				input.destinationGroup,
+				destinationFriendlyName,
+			),
 		},
 		Steps: steps,
 	}

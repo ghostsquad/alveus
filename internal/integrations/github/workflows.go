@@ -79,6 +79,7 @@ func newDeploymentGroupWorkflows(input newDeploymentGroupWorkflowInput) (gocto.W
 			namePrefix:           input.namePrefix,
 			checkoutCommitBranch: input.checkoutCommitBranch,
 			destination:          dest,
+			destinationGroup:     input.group.Name,
 			apps:                 input.apps,
 		})
 		destinationFriendlyName := v1alpha1.CoalesceSanitizeDestination(dest)
@@ -93,6 +94,7 @@ type newDeploymentWorkflowInput struct {
 	namePrefix           string
 	checkoutCommitBranch string
 	destination          v1alpha1.Destination
+	destinationGroup     string
 	apps                 argocd.ApplicationRepository
 }
 
@@ -107,12 +109,17 @@ func newDeploymentWorkflow(input newDeploymentWorkflowInput) gocto.Workflow {
 		panic(fmt.Errorf("no app found for destination %+v", input.destination))
 	}
 
+	input.destination.ArgoCD.ApplicationFilePath = util.CoalesceStrings(
+		input.destination.ArgoCD.ApplicationFilePath,
+		appFilePath,
+	)
+
 	job := newDeployJob(newDeployJobInput{
 		name:                 jobName,
 		destination:          input.destination,
+		destinationGroup:     input.destinationGroup,
 		checkoutCommitBranch: input.checkoutCommitBranch,
 		argoCDSpec:           input.destination.ArgoCD,
-		appFilePath:          appFilePath,
 	})
 
 	jobs := util.MergeMapsShallow(
@@ -137,6 +144,7 @@ func newDeploymentWorkflow(input newDeploymentWorkflowInput) gocto.Workflow {
 				Shell: gocto.ShellBash,
 			},
 		},
+		Env:  input.destination.Github.Env,
 		Jobs: jobs,
 	}
 

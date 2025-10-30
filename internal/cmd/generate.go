@@ -25,6 +25,7 @@ func NewGenerateCommand() *cobra.Command {
 	var repoURL string
 	var applicationOutputPath string
 	var workflowOutputPath string
+	var writeAppsFlag bool
 
 	cmd := &cobra.Command{
 		Use: "generate",
@@ -80,8 +81,10 @@ func NewGenerateCommand() *cobra.Command {
 
 			{
 				fs := osfs.New(".")
-				if err := writeApps(fs, applicationOutputPath, apps); err != nil {
-					return fmt.Errorf("writing apps: %w", err)
+				if writeAppsFlag {
+					if err := writeApps(fs, applicationOutputPath, apps); err != nil {
+						return fmt.Errorf("writing apps: %w", err)
+					}
 				}
 				if err := writeWorkflows(fs, workflowOutputPath, wfs); err != nil {
 					return fmt.Errorf("writing workflows: %w", err)
@@ -102,6 +105,7 @@ func NewGenerateCommand() *cobra.Command {
 
 	f.StringVar(&workflowOutputPath, "workflow-output-path", gocto.DefaultPathToWorkflows, "path to where to write Github workflow files")
 
+	f.BoolVar(&writeAppsFlag, "write-apps", true, "write the applications to the output")
 	return cmd
 }
 
@@ -115,13 +119,9 @@ type generateNameInput struct {
 func generateNameByStrategy(input generateNameInput) string {
 	components := []string{
 		input.serviceName,
+		input.groupName,
+		v1alpha1.CoalesceSanitizeDestination(input.destination),
 	}
-
-	if input.strategy.IncludeGroup {
-		components = append(components, input.groupName)
-	}
-
-	components = append(components, v1alpha1.CoalesceSanitizeDestination(input.destination))
 
 	if input.strategy.IncludeDestinationNamespace {
 		components = append(components, input.destination.Namespace)

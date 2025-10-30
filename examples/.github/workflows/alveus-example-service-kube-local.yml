@@ -13,8 +13,8 @@ jobs:
     runs-on:
     - ubuntu-latest
     env:
-      ARGOCD_APPLICATION_FILE: .alveus/applications/example-service-kube-local.yaml
-      GIT_COMMIT_MESSAGE: "feat: 🚀 deploy to kube-local"
+      ARGOCD_APPLICATION_FILE: .alveus/applications/example-service-staging-kube-local.yaml
+      GIT_COMMIT_MESSAGE: "feat(staging): 🚀 deploy to kube-local"
     defaults:
       run:
         shell: bash
@@ -32,31 +32,22 @@ jobs:
     - name: update-application-yaml
       run: |-
         yq e -i '.spec.source.targetRevision = "${{ github.sha }}"' \
-        "${ARGOCD_APPLICATION_FILE}"
+          "${ARGOCD_APPLICATION_FILE}"
     - name: git-add-commit
       run: "git add \"${ARGOCD_APPLICATION_FILE}\"\nif git diff-index --quiet HEAD -- 2>/dev/null; then\n  echo \"No changes to commit\"\nelse\n  git commit -m \"${GIT_COMMIT_MESSAGE}\"\nfi"
-    - uses: actions-js/push@v1.5
-      with:
-        branch: ""
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    - name: argocd-login
-      run: |-
-        argocd login \
-          --core \
-          --grpc-web \
-          --grpc-web \
-          --skip-test-tls \
-          ;
     - name: argocd-upsert
       run: |-
         argocd app create \
-          --grpc-web \
+           \
           --upsert \
           --file "${ARGOCD_APPLICATION_FILE}" \
+          --sync-policy=none \
+          --prompts-enabled=false \
           ;
     - name: argocd-sync
       run: |-
         argocd app sync \
-          --grpc-web \
-          --timeout 300 \
+           \
+          --timeout 30 \
+          --retry-limit 3 \
           ;

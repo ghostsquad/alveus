@@ -34,16 +34,30 @@ func (s *Service) Inflate() {
 				s.DestinationNamespace,
 			)
 
-			dest.ArgoCD.LoginCommandArgs = util.CoalesceSlices(
-				dest.ArgoCD.LoginCommandArgs,
-				group.ArgoCD.LoginCommandArgs,
-				s.ArgoCD.LoginCommandArgs,
+			dest.ArgoCD.ExtraArgs = util.CoalesceSlices(
+				dest.ArgoCD.ExtraArgs,
+				group.ArgoCD.ExtraArgs,
+				s.ArgoCD.ExtraArgs,
 			)
 
-			dest.ArgoCD.UseKubeContext = util.CoalescePointers(
-				dest.ArgoCD.UseKubeContext,
-				group.ArgoCD.UseKubeContext,
-				s.ArgoCD.UseKubeContext,
+			dest.ArgoCD.SyncTimeoutSeconds = util.CoalescePointers(
+				dest.ArgoCD.SyncTimeoutSeconds,
+				group.ArgoCD.SyncTimeoutSeconds,
+				s.ArgoCD.SyncTimeoutSeconds,
+				util.Ptr(30),
+			)
+
+			dest.ArgoCD.ApplicationFilePath = util.CoalesceStrings(
+				dest.ArgoCD.ApplicationFilePath,
+				group.ArgoCD.ApplicationFilePath,
+				s.ArgoCD.ApplicationFilePath,
+			)
+
+			dest.ArgoCD.SyncRetryLimit = util.CoalescePointers(
+				dest.ArgoCD.SyncRetryLimit,
+				group.ArgoCD.SyncRetryLimit,
+				s.ArgoCD.SyncRetryLimit,
+				util.Ptr(3),
 			)
 
 			dest.Github.Secrets = util.CoalescePointers(
@@ -71,6 +85,12 @@ func (s *Service) Inflate() {
 				dest.Github.ExtraDeployJobs,
 				group.Github.ExtraDeployJobs,
 				s.Github.ExtraDeployJobs,
+			)
+
+			dest.Github.Env = util.CoalesceMaps(
+				dest.Github.Env,
+				group.Github.Env,
+				s.Github.Env,
 			)
 
 			s.DestinationGroups[gIdx].Destinations[dIdx] = dest

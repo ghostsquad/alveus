@@ -3,10 +3,6 @@ destinationGroups:
 - name: staging
   destinations:
   - server: http://kube.local
-    argoCD:
-      loginCommandArgs:
-      - --core
-      - --grpc-web
 destinationNamespace: podinfo
 argoCD:
   source:

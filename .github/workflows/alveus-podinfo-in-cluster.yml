@@ -52,12 +52,14 @@ jobs:
           e02a16d5f0fa.ngrok-free.app \
           --username admin \
           --password ${{ secrets.ARGOCD_ADMIN_PASSWORD }} \
+          --insecure \
           --grpc-web \
           --skip-test-tls \
           ;
     - name: argocd-upsert
       run: |-
         argocd app create \
+          --insecure \
           --grpc-web \
           --upsert \
           --file "${ARGOCD_APPLICATION_FILE}" \
@@ -65,6 +67,7 @@ jobs:
     - name: argocd-sync
       run: |-
         argocd app sync \
+          --insecure \
           --grpc-web \
           --timeout 300 \
           ;
