@@ -1,5 +1,9 @@
 package util
 
+import (
+	"reflect"
+)
+
 func Ptr[T any](v T) *T {
 	return &v
 }
@@ -15,6 +19,17 @@ func MergeMapsShallow[K comparable, T any](vals ...map[K]T) map[K]T {
 	return result
 }
 
+func CoalesceZero[T any](vals ...T) T {
+	for _, val := range vals {
+		if !reflect.ValueOf(val).IsZero() {
+			return val
+		}
+	}
+
+	var zero T
+	return zero
+}
+
 func CoalesceSlices[T any](vals ...[]T) []T {
 	for _, val := range vals {
 		if len(val) > 0 {
@@ -28,16 +43,6 @@ func CoalesceSlices[T any](vals ...[]T) []T {
 func CoalesceMaps[K comparable, T any](vals ...map[K]T) map[K]T {
 	for _, val := range vals {
 		if len(val) > 0 {
-			return val
-		}
-	}
-
-	return nil
-}
-
-func CoalescePointers[T any](vals ...*T) *T {
-	for _, val := range vals {
-		if val != nil {
 			return val
 		}
 	}

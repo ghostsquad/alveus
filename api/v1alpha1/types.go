@@ -7,6 +7,9 @@ import (
 
 	argov1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"github.com/cakehappens/gocto"
+	"github.com/samber/lo"
+
+	"github.com/ghostsquad/alveus/internal/util"
 )
 
 type Service struct {
@@ -31,6 +34,51 @@ type ArgoCD struct {
 	SyncPolicy          argov1alpha1.SyncPolicy `json:"syncPolicy,omitempty,omitzero"`
 }
 
+func (a *ArgoCD) CoalesceFields(others ...ArgoCD) {
+	all := append([]ArgoCD{*a}, others...)
+	// fallback defaults (if any)
+	all = append(all, ArgoCD{
+		SyncTimeoutSeconds: util.Ptr(30),
+		SyncRetryLimit:     util.Ptr(3),
+	})
+
+	a.ExtraArgs = util.CoalesceSlices(
+		lo.Map(all, func(item ArgoCD, _ int) []string {
+			return item.ExtraArgs
+		})...,
+	)
+
+	a.SyncTimeoutSeconds = util.CoalesceZero(
+		lo.Map(all, func(item ArgoCD, _ int) *int {
+			return item.SyncTimeoutSeconds
+		})...,
+	)
+
+	a.SyncRetryLimit = util.CoalesceZero(
+		lo.Map(all, func(item ArgoCD, _ int) *int {
+			return item.SyncRetryLimit
+		})...,
+	)
+
+	a.ApplicationFilePath = util.CoalesceZero(
+		lo.Map(all, func(item ArgoCD, _ int) string {
+			return item.ApplicationFilePath
+		})...,
+	)
+
+	a.Source = util.CoalesceZero(
+		lo.Map(all, func(item ArgoCD, _ int) Source {
+			return item.Source
+		})...,
+	)
+
+	a.SyncPolicy = util.CoalesceZero(
+		lo.Map(all, func(item ArgoCD, _ int) argov1alpha1.SyncPolicy {
+			return item.SyncPolicy
+		})...,
+	)
+}
+
 type Github struct {
 	On              gocto.WorkflowOn     `json:"on,omitempty,omitzero"`
 	PreDeploySteps  []gocto.Step         `json:"preDeploySteps,omitempty"`
@@ -38,6 +86,46 @@ type Github struct {
 	ExtraDeployJobs map[string]gocto.Job `json:"extraDeployJobs,omitempty"`
 	Secrets         *gocto.Secrets       `json:"secrets,omitempty"`
 	Env             map[string]string    `json:"env,omitempty,omitzero"`
+}
+
+func (g *Github) CoalesceFields(others ...Github) {
+	all := append([]Github{*g}, others...)
+	// fallback defaults (if any)
+	all = append(all, Github{
+		Secrets: &gocto.Secrets{
+			Inherit: true,
+		},
+	})
+
+	g.PreDeploySteps = util.CoalesceSlices(
+		lo.Map(all, func(item Github, _ int) []gocto.Step {
+			return item.PreDeploySteps
+		})...,
+	)
+
+	g.PostDeploySteps = util.CoalesceSlices(
+		lo.Map(all, func(item Github, _ int) []gocto.Step {
+			return item.PostDeploySteps
+		})...,
+	)
+
+	g.ExtraDeployJobs = util.CoalesceMaps(
+		lo.Map(all, func(item Github, _ int) map[string]gocto.Job {
+			return item.ExtraDeployJobs
+		})...,
+	)
+
+	g.Secrets = util.CoalesceZero(
+		lo.Map(all, func(item Github, _ int) *gocto.Secrets {
+			return item.Secrets
+		})...,
+	)
+
+	g.Env = util.CoalesceMaps(
+		lo.Map(all, func(item Github, _ int) map[string]string {
+			return item.Env
+		})...,
+	)
 }
 
 type ApplicationNameUniquenessStrategy struct {

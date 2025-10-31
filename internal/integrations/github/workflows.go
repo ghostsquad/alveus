@@ -105,7 +105,7 @@ func newDeploymentWorkflow(input newDeploymentWorkflowInput) gocto.Workflow {
 		panic(fmt.Errorf("no app found for destination %+v", input.destination))
 	}
 
-	input.destination.ArgoCD.ApplicationFilePath = util.CoalesceStrings(
+	input.destination.ArgoCD.ApplicationFilePath = util.CoalesceZero(
 		input.destination.ArgoCD.ApplicationFilePath,
 		appFilePath,
 	)

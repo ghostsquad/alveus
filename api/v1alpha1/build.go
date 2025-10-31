@@ -28,70 +28,14 @@ func (s *Service) Inflate() {
 
 	for gIdx, group := range s.DestinationGroups {
 		for dIdx, dest := range group.Destinations {
-			dest.Namespace = util.CoalesceStrings(
+			dest.Namespace = util.CoalesceZero(
 				dest.Namespace,
 				group.DestinationNamespace,
 				s.DestinationNamespace,
 			)
 
-			dest.ArgoCD.ExtraArgs = util.CoalesceSlices(
-				dest.ArgoCD.ExtraArgs,
-				group.ArgoCD.ExtraArgs,
-				s.ArgoCD.ExtraArgs,
-			)
-
-			dest.ArgoCD.SyncTimeoutSeconds = util.CoalescePointers(
-				dest.ArgoCD.SyncTimeoutSeconds,
-				group.ArgoCD.SyncTimeoutSeconds,
-				s.ArgoCD.SyncTimeoutSeconds,
-				util.Ptr(30),
-			)
-
-			dest.ArgoCD.ApplicationFilePath = util.CoalesceStrings(
-				dest.ArgoCD.ApplicationFilePath,
-				group.ArgoCD.ApplicationFilePath,
-				s.ArgoCD.ApplicationFilePath,
-			)
-
-			dest.ArgoCD.SyncRetryLimit = util.CoalescePointers(
-				dest.ArgoCD.SyncRetryLimit,
-				group.ArgoCD.SyncRetryLimit,
-				s.ArgoCD.SyncRetryLimit,
-				util.Ptr(3),
-			)
-
-			dest.Github.Secrets = util.CoalescePointers(
-				dest.Github.Secrets,
-				group.Github.Secrets,
-				s.Github.Secrets,
-				&gocto.Secrets{
-					Inherit: true,
-				},
-			)
-
-			dest.Github.PreDeploySteps = util.CoalesceSlices(
-				dest.Github.PreDeploySteps,
-				group.Github.PreDeploySteps,
-				s.Github.PreDeploySteps,
-			)
-
-			dest.Github.PostDeploySteps = util.CoalesceSlices(
-				dest.Github.PostDeploySteps,
-				group.Github.PostDeploySteps,
-				s.Github.PostDeploySteps,
-			)
-
-			dest.Github.ExtraDeployJobs = util.CoalesceMaps(
-				dest.Github.ExtraDeployJobs,
-				group.Github.ExtraDeployJobs,
-				s.Github.ExtraDeployJobs,
-			)
-
-			dest.Github.Env = util.CoalesceMaps(
-				dest.Github.Env,
-				group.Github.Env,
-				s.Github.Env,
-			)
+			(&dest.ArgoCD).CoalesceFields(group.ArgoCD, s.ArgoCD)
+			(&dest.Github).CoalesceFields(group.Github, s.Github)
 
 			s.DestinationGroups[gIdx].Destinations[dIdx] = dest
 		}
