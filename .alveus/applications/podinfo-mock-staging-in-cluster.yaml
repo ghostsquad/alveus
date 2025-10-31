@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: podinfo-mock-staging-in-cluster
+  namespace: argocd
+spec:
+  destination:
+    name: in-cluster
+    namespace: podinfo
+  project: default
+  source:
+    directory:
+      include: "{*.yml,*.yaml}"
+      recurse: true
+    repoURL: https://github.com/ghostsquad/alveus.git
+    targetRevision: HEAD

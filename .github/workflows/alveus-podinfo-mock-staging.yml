@@ -1,0 +1,9 @@
+name: podinfo-mock-staging
+"on":
+  workflow_call: {}
+  workflow_dispatch: {}
+jobs:
+  in-cluster:
+    name: in-cluster
+    uses: ./.github/workflows/alveus-podinfo-mock-staging-in-cluster.yml
+    secrets: inherit

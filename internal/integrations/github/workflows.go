@@ -30,7 +30,6 @@ func NewWorkflows(service v1alpha1.Service, apps argocd.ApplicationRepository) [
 
 	top = SetWorkflowFilenameWithAlveusPrefix(top)
 
-	var prevGroupJob *gocto.Job
 	for _, dg := range service.DestinationGroups {
 		dgWf, subWfs := newDeploymentGroupWorkflows(newDeploymentGroupWorkflowInput{
 			namePrefix:           service.Name,
@@ -42,10 +41,7 @@ func NewWorkflows(service v1alpha1.Service, apps argocd.ApplicationRepository) [
 		workflows = append(workflows, subWfs...)
 
 		job := newDeployGroupJob(dg.Name, dgWf)
-		if prevGroupJob != nil {
-			job.Needs = []string{prevGroupJob.Name}
-		}
-		prevGroupJob = &job
+		job.Needs = dg.Needs
 		top.Jobs[dg.Name] = job
 	}
 
@@ -76,7 +72,7 @@ func newDeploymentGroupWorkflows(input newDeploymentGroupWorkflowInput) (gocto.W
 
 	for _, dest := range input.group.Destinations {
 		wf := newDeploymentWorkflow(newDeploymentWorkflowInput{
-			namePrefix:           input.namePrefix,
+			namePrefix:           input.namePrefix + "-" + input.group.Name,
 			checkoutCommitBranch: input.checkoutCommitBranch,
 			destination:          dest,
 			destinationGroup:     input.group.Name,

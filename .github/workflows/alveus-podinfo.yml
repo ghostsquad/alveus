@@ -7,7 +7,13 @@ name: podinfo
     branches:
     - main
 jobs:
-  demo:
-    name: demo
-    uses: ./.github/workflows/alveus-podinfo-demo.yml
+  mock-prod:
+    name: mock-prod
+    needs:
+    - mock-staging
+    uses: ./.github/workflows/alveus-podinfo-mock-prod.yml
+    secrets: inherit
+  mock-staging:
+    name: mock-staging
+    uses: ./.github/workflows/alveus-podinfo-mock-staging.yml
     secrets: inherit

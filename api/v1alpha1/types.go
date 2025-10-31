@@ -128,6 +128,7 @@ func (s *Source) Validate() error {
 
 type DestinationGroup struct {
 	Name                 string        `json:"name"`
+	Needs                []string      `json:"needs,omitempty"`
 	Destinations         []Destination `json:"destinations"`
 	DestinationNamespace string        `json:"destinationNamespace,omitempty,omitzero"`
 	ArgoCD               ArgoCD        `json:"argoCD,omitempty,omitzero"`
