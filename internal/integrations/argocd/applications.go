@@ -164,11 +164,11 @@ func (r ApplicationRepository) GetByDestination(dest v1alpha1.Destination) (stri
 			continue
 		}
 
-		if app.Spec.Destination.Server == dest.Server {
+		if app.Spec.Destination.Server != "" && app.Spec.Destination.Server == dest.Server {
 			return filePath, app, true
 		}
 
-		if app.Spec.Destination.Name == dest.Name {
+		if app.Spec.Destination.Name != "" && app.Spec.Destination.Name == dest.Name {
 			return filePath, app, true
 		}
 	}
