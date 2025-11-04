@@ -33,11 +33,11 @@ runs:
         '${{ inputs.application-file }}'
   - name: git-add-commit
     run: |
-      git add "${{ inputs.application-file }"
+      git add '${{ inputs.application-file }}'
       if git diff-index --quiet HEAD -- 2>/dev/null; then
         echo "No changes to commit"
       else
-        git commit -m "${{ inputs.git-commit-msg }}"
+        git commit -m '${{ inputs.git-commit-msg }}'
       fi
   - name: argocd-upsert
     run: |-
