@@ -62,9 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        group: mock-staging
-        include:
-        - dest: in-cluster
+        group: [mock-staging]
+        dest: [in-cluster]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -84,9 +83,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        group: mock-prod
-        include:
-          - dest: in-cluster
+        group: [mock-prod]
+        dest: [in-cluster]
     steps:
       - uses: actions/checkout@v4
         with:
