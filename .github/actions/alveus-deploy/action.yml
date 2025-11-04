@@ -48,7 +48,7 @@ runs:
       argocd app create \
         --insecure \
         --upsert \
-        --file "${{ inputs.application-file }" \
+        --file '${{ inputs.application-file }}' \
         --prompts-enabled=false \
         ;
   - name: argocd-sync
