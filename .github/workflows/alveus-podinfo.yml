@@ -44,6 +44,9 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
+    - uses: jdx/mise-action@v3
+      with:
+        version: 2025.11.2
     - name: input-jq
       id: input-jq
       run:
@@ -69,6 +72,9 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2025.11.2
       - name: input-jq
         id: input-jq
         run:
@@ -93,6 +99,9 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2025.11.2
       - name: input-jq
         id: input-jq
         run:
