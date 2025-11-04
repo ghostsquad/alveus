@@ -35,6 +35,12 @@ name: deploy-podinfo
 defaults:
   run:
     shell: bash
+
+env:
+  ARGOCD_SERVER: argocd.example.com
+  ARGOCD_AUTH_TOKEN: abc123
+  ARGOCD_OPTS: --grpc-web
+
 jobs:
   single:
     if: ${{ inputs.destination != '-' && inputs.destination-group == '-' }}
