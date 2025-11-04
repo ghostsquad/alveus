@@ -1,0 +1,57 @@
+name: alveus-deploy
+author: ghostsquad
+description: alveus-deploy
+inputs:
+  target-revision:
+    description: The target revision to deploy
+    required: true
+  application-file:  # id of input
+    description: Path to application to update
+    required: true
+  git-commit-msg:
+    description: The git commit message to use when the application is updated
+    required: true
+  timeout:
+    description: Time out after this many seconds
+    required: false
+    default: "30"
+outputs:
+  random-number:
+    description: "Random number"
+    value: ${{ steps.random-number-generator.outputs.random-number }}
+runs:
+  using: "composite"
+  steps:
+  - name: git-config
+    run: |-
+      git config --global user.name '${{ github.actor }}'
+      git config --global user.email '${{ github.actor }}@users.noreply.github.com'
+  - uses: frenck/action-setup-yq@v1
+  - name: update-application-yaml
+    run: |-
+      yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
+        '${{ inputs.application-file }}'
+  - name: git-add-commit
+    run: |
+      git add "${{ inputs.application-file }"
+      if git diff-index --quiet HEAD -- 2>/dev/null; then
+        echo "No changes to commit"
+      else
+        git commit -m "${{ inputs.git-commit-msg }}"
+      fi
+  - name: argocd-upsert
+    run: |-
+      argocd app create \
+        --insecure \
+        --upsert \
+        --file "${{ inputs.application-file }" \
+        --prompts-enabled=false \
+        ;
+  - name: argocd-sync
+    run: |-
+      APPNAME=$(yq '.metadata.name' '${{ inputs.application-file }}')
+      argocd app sync \
+        "${APPNAME}" \
+        --insecure \
+        --timeout ${{ inputs.timeout }} \
+        ;

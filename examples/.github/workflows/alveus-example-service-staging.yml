@@ -5,5 +5,5 @@ name: example-service-staging
 jobs:
   kube-local:
     name: kube-local
-    uses: ./.github/workflows/alveus-example-service-kube-local.yml
+    uses: ./.github/workflows/alveus-example-service-staging-kube-local.yml
     secrets: inherit
