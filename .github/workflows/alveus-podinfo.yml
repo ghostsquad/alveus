@@ -44,15 +44,15 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
-        ref: "${{ inputs.revision-to-deploy }}"
     - name: input-jq
       id: input-jq
       run:
         echo "group=${{ fromJSON(inputs.destination).group }}" >> $GITHUB_OUTPUT
         echo "cluster=${{ fromJSON(inputs.destination).cluster }}" >> $GITHUB_OUTPUT
+        echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
     - uses: ./.github/actions/alveus-deploy
       with:
-        target-revision: ${{ github.sha }}
+        target-revision: ${{ steps.input-jq.outputs.target-revision }}
         application-file: "./.alveus/applications/podinfo-${{ steps.input-jq.outputs.group }}-${{ steps.input-jq.outputs.cluster }}.yaml"
         git-commit-msg: |
           deploy(${{ steps.input-jq.outputs.group }}): 🚀 to ${{ steps.input-jq.outputs.cluster }}
@@ -69,10 +69,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: "${{ inputs.revision-to-deploy }}"
+      - name: input-jq
+        id: input-jq
+        run:
+          echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
       - uses: ./.github/actions/alveus-deploy
         with:
-          target-revision: ${{ github.sha }}
+          target-revision: ${{ steps.input-jq.outputs.target-revision }}
           application-file: "./.alveus/applications/podinfo-${{ matrix.group }}-${{ matrix.dest }}.yaml"
           git-commit-msg: |
             deploy(${{ matrix.group }}): 🚀 to ${{ matrix.dest }}
@@ -90,10 +93,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: "${{ inputs.revision-to-deploy }}"
+      - name: input-jq
+        id: input-jq
+        run:
+          echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
       - uses: ./.github/actions/alveus-deploy
         with:
-          target-revision: ${{ github.sha }}
+          target-revision: ${{ steps.input-jq.outputs.target-revision }}
           application-file: "./.alveus/applications/podinfo-${{ matrix.group }}-${{ matrix.dest }}.yaml"
           git-commit-msg: |
             deploy(${{ matrix.group }}): 🚀 to ${{ matrix.dest }}
