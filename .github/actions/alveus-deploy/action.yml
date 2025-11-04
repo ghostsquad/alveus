@@ -23,15 +23,18 @@ runs:
   using: "composite"
   steps:
   - name: git-config
+    shell: bash
     run: |-
       git config --global user.name '${{ github.actor }}'
       git config --global user.email '${{ github.actor }}@users.noreply.github.com'
   - uses: frenck/action-setup-yq@v1
   - name: update-application-yaml
+    shell: bash
     run: |-
       yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
         '${{ inputs.application-file }}'
   - name: git-add-commit
+    shell: bash
     run: |
       git add '${{ inputs.application-file }}'
       if git diff-index --quiet HEAD -- 2>/dev/null; then
@@ -40,6 +43,7 @@ runs:
         git commit -m '${{ inputs.git-commit-msg }}'
       fi
   - name: argocd-upsert
+    shell: bash
     run: |-
       argocd app create \
         --insecure \
@@ -48,6 +52,7 @@ runs:
         --prompts-enabled=false \
         ;
   - name: argocd-sync
+    shell: bash
     run: |-
       APPNAME=$(yq '.metadata.name' '${{ inputs.application-file }}')
       argocd app sync \
