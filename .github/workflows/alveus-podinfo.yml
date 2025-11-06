@@ -20,6 +20,7 @@ name: deploy-podinfo
           - '{"group":"mock-staging","cluster":"cluster2","ns":"podinfo"}'
           - '{"group":"mock-prod","cluster":"in-cluster","ns":"podinfo"}'
           - '{"group":"mock-prod","cluster":"cluster2","ns":"podinfo"}'
+          - '{"group":"mock-prod","cluster":"cluster3","ns":"podinfo"}'
       revision-to-deploy:
         description: the revision to deploy
         required: true
@@ -76,7 +77,7 @@ jobs:
     strategy:
       matrix:
         group: [mock-staging]
-        dest: [in-cluster]
+        dest: [in-cluster, cluster2]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,7 +104,7 @@ jobs:
     strategy:
       matrix:
         group: [mock-prod]
-        dest: [in-cluster]
+        dest: [in-cluster, cluster2, cluster3]
     steps:
       - uses: actions/checkout@v4
         with:
