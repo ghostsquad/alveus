@@ -69,15 +69,16 @@ func NewGenerateCommand() *cobra.Command {
 				return fmt.Errorf("generating apps: %w", err)
 			}
 
-			var wfs []gocto.Workflow
-
 			appRepo := make(argocd.ApplicationRepository)
 			for _, app := range apps {
 				appPath := filepath.Join(applicationOutputPath, argocd.FilenameFor(app))
 				appRepo[appPath] = app
 			}
 
-			wfs = github.NewWorkflows(service, appRepo)
+			wf, err := github.NewWorkflow(service, appRepo)
+			if err != nil {
+				return fmt.Errorf("generating workflow: %w", err)
+			}
 
 			{
 				fs := osfs.New(".")
@@ -86,7 +87,7 @@ func NewGenerateCommand() *cobra.Command {
 						return fmt.Errorf("writing apps: %w", err)
 					}
 				}
-				if err := writeWorkflows(fs, workflowOutputPath, wfs); err != nil {
+				if err := writeWorkflows(fs, workflowOutputPath, wf); err != nil {
 					return fmt.Errorf("writing workflows: %w", err)
 				}
 			}
@@ -187,7 +188,7 @@ func writeApps(fs billy.Filesystem, basepath string, apps []argov1alpha1.Applica
 	return nil
 }
 
-func writeWorkflows(fs billy.Filesystem, basepath string, wfs []gocto.Workflow) error {
+func writeWorkflows(fs billy.Filesystem, basepath string, wfs ...gocto.Workflow) error {
 	if err := fs.MkdirAll(basepath, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory: %q: %w", basepath, err)
 	}

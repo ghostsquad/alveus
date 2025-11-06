@@ -1,9 +1,11 @@
 package github
 
 import (
+	"encoding/json"
 	"fmt"
+
 	"github.com/cakehappens/gocto"
-	"github.com/goforj/godump"
+	"github.com/samber/lo"
 
 	"github.com/ghostsquad/alveus/api/v1alpha1"
 	"github.com/ghostsquad/alveus/internal/constants"
@@ -19,132 +21,172 @@ func SetWorkflowFilenameWithAlveusPrefix(w gocto.Workflow) gocto.Workflow {
 	return w
 }
 
-func NewWorkflows(service v1alpha1.Service, apps argocd.ApplicationRepository) []gocto.Workflow {
-	var workflows []gocto.Workflow
+type DestinationChoice struct {
+	Group     string `json:"group"`
+	Cluster   string `json:"cluster"`
+	Namespace string `json:"ns"`
+}
 
+func NewWorkflow(service v1alpha1.Service, apps argocd.ApplicationRepository) (gocto.Workflow, error) {
 	top := gocto.Workflow{
-		Name: service.Name,
+		Name: "deploy-" + service.Name,
 		On:   service.Github.On,
-		Jobs: make(map[string]gocto.Job),
-	}
-
-	top = SetWorkflowFilenameWithAlveusPrefix(top)
-
-	for _, dg := range service.DestinationGroups {
-		dgWf, subWfs := newDeploymentGroupWorkflows(newDeploymentGroupWorkflowInput{
-			namePrefix:           service.Name,
-			group:                dg,
-			checkoutCommitBranch: service.ArgoCD.Source.CommitBranch,
-			apps:                 apps,
-		})
-		workflows = append(workflows, dgWf)
-		workflows = append(workflows, subWfs...)
-
-		job := newDeployGroupJob(dg.Name, dgWf)
-		job.Needs = dg.Needs
-		top.Jobs[dg.Name] = job
-	}
-
-	workflows = append(workflows, top)
-
-	return workflows
-}
-
-type newDeploymentGroupWorkflowInput struct {
-	namePrefix           string
-	group                v1alpha1.DestinationGroup
-	checkoutCommitBranch string
-	apps                 argocd.ApplicationRepository
-}
-
-func newDeploymentGroupWorkflows(input newDeploymentGroupWorkflowInput) (gocto.Workflow, []gocto.Workflow) {
-	var subWorkflows []gocto.Workflow
-
-	groupWf := gocto.Workflow{
-		Name: input.namePrefix + "-" + input.group.Name,
-		On: gocto.WorkflowOn{
-			Dispatch: &gocto.OnDispatch{},
-			Call:     &gocto.OnCall{},
-		},
-		Jobs: make(map[string]gocto.Job),
-	}
-	groupWf = SetWorkflowFilenameWithAlveusPrefix(groupWf)
-
-	for _, dest := range input.group.Destinations {
-		wf := newDeploymentWorkflow(newDeploymentWorkflowInput{
-			namePrefix:           input.namePrefix + "-" + input.group.Name,
-			checkoutCommitBranch: input.checkoutCommitBranch,
-			destination:          dest,
-			destinationGroup:     input.group.Name,
-			apps:                 input.apps,
-		})
-		destinationFriendlyName := v1alpha1.CoalesceSanitizeDestination(dest)
-		groupWf.Jobs[destinationFriendlyName] = newDeployGroupJob(destinationFriendlyName, wf)
-		subWorkflows = append(subWorkflows, wf)
-	}
-
-	return groupWf, subWorkflows
-}
-
-type newDeploymentWorkflowInput struct {
-	namePrefix           string
-	checkoutCommitBranch string
-	destination          v1alpha1.Destination
-	destinationGroup     string
-	apps                 argocd.ApplicationRepository
-}
-
-func newDeploymentWorkflow(input newDeploymentWorkflowInput) gocto.Workflow {
-	destinationFriendlyName := v1alpha1.CoalesceSanitizeDestination(input.destination)
-
-	jobName := destinationFriendlyName
-
-	appFilePath, _, ok := input.apps.GetByDestination(input.destination)
-	if !ok {
-		godump.Dump(input.apps)
-		panic(fmt.Errorf("no app found for destination %+v", input.destination))
-	}
-
-	input.destination.ArgoCD.ApplicationFilePath = util.CoalesceZero(
-		input.destination.ArgoCD.ApplicationFilePath,
-		appFilePath,
-	)
-
-	job := newDeployJob(newDeployJobInput{
-		name:                 jobName,
-		destination:          input.destination,
-		destinationGroup:     input.destinationGroup,
-		checkoutCommitBranch: input.checkoutCommitBranch,
-		argoCDSpec:           input.destination.ArgoCD,
-	})
-
-	jobs := util.MergeMapsShallow(
-		input.destination.Github.ExtraDeployJobs,
-		map[string]gocto.Job{
-			jobName: job,
-		},
-	)
-
-	wf := gocto.Workflow{
-		Name: input.namePrefix + "-" + destinationFriendlyName,
-		On: gocto.WorkflowOn{
-			Dispatch: &gocto.OnDispatch{},
-			Call:     &gocto.OnCall{},
-		},
-		Concurrency: gocto.Concurrency{
-			Group:            destinationFriendlyName,
-			CancelInProgress: false,
-		},
 		Defaults: gocto.Defaults{
 			Run: gocto.DefaultsRun{
 				Shell: gocto.ShellBash,
 			},
 		},
-		Env:  input.destination.Github.Env,
-		Jobs: jobs,
+		Jobs: make(map[string]gocto.Job),
+		Env: map[string]string{
+			"ARGOCD_SERVER":     "argocd.example.com",
+			"ARGOCD_AUTH_TOKEN": "${{ secrets.ARGOCD_AUTH_TOKEN }}",
+			"ARGOCD_OPTS":       "--grpc-web",
+		},
 	}
 
-	wf = SetWorkflowFilenameWithAlveusPrefix(wf)
+	var destinationChoices []string
+	for _, group := range service.DestinationGroups {
+		for _, dest := range group.Destinations {
+			choice := DestinationChoice{
+				Group:     group.Name,
+				Cluster:   v1alpha1.CoalesceSanitizeDestination(dest),
+				Namespace: dest.Namespace,
+			}
 
-	return wf
+			choiceJSON, err := json.Marshal(choice)
+			if err != nil {
+				return gocto.Workflow{}, fmt.Errorf("failed to marshal dispatch choice: %w", err)
+			}
+
+			destinationChoices = append(destinationChoices, string(choiceJSON))
+		}
+	}
+
+	top.On.Dispatch = &gocto.OnDispatch{
+		Inputs: map[string]gocto.OnDispatchInput{
+			"destination-group": {
+				Description: `the destination group to deploy (mutually exclusive with destination, default "-" for all groups)`,
+				Required:    false,
+				Type:        gocto.OnDispatchInputTypeChoice,
+				Options: append([]string{"-"}, lo.Map(
+					service.DestinationGroups, func(group v1alpha1.DestinationGroup, _ int) string {
+						return group.Name
+					})...,
+				),
+			},
+			"destination": {
+				Description: `the destination to deploy (mutually exclusive with destination-group, default "-" for all destinations)`,
+				Required:    false,
+				Type:        gocto.OnDispatchInputTypeChoice,
+				Options:     append([]string{"-"}, destinationChoices...),
+			},
+			"revision-to-deploy": {
+				Description: `the revision to deploy, default is github.sha`,
+				Required:    false,
+				Type:        gocto.OnDispatchInputTypeChoice,
+				// TODO add more choices
+				Options: []string{
+					"-",
+				},
+			},
+		},
+	}
+
+	top.Jobs["single"] = gocto.Job{
+		If:          `${{ inputs.destination != '-' && inputs.destination-group == '-' }}`,
+		RunsOn:      []string{"ubuntu-latest"},
+		Environment: gocto.Environment{},
+		Concurrency: gocto.Concurrency{},
+		Outputs:     nil,
+		Env:         nil,
+		Defaults:    gocto.Defaults{},
+		Steps: []gocto.Step{
+			{
+				Uses: "actions/checkout@v4",
+				With: map[string]any{
+					"fetch-depth":         0,
+					"persist-credentials": false,
+				},
+			},
+			// insert custom pre-deploy steps here
+			{
+				Name: "input-jq",
+				ID:   "input-jq",
+				Run: util.SprintfDedent(`
+					echo "group=${{ fromJSON(inputs.destination).group }}" >> $GITHUB_OUTPUT
+					echo "cluster=${{ fromJSON(inputs.destination).cluster }}" >> $GITHUB_OUTPUT
+					echo "ns=${{ fromJSON(inputs.destination).ns }}" >> $GITHUB_OUTPUT
+					echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
+				`),
+			},
+			{
+				Uses: "./.github/actions/alveus-deploy",
+				With: map[string]any{
+					"target-revision":  `${{ steps.input-jq.outputs.target-revision }}`,
+					"application-file": `./.alveus/applications/podinfo/${{ steps.input-jq.outputs.group }}/${{ steps.input-jq.outputs.cluster }}.yaml`,
+					"namespace":        `${{ steps.input-jq.outputs.ns }}`,
+					"git-commit-msg":   `deploy(${{ steps.input-jq.outputs.group }}): 🚀 to ${{ steps.input-jq.outputs.cluster }}`,
+				},
+			},
+		},
+	}
+
+	for _, dg := range service.DestinationGroups {
+		top.Jobs[dg.Name] = gocto.Job{
+			Name:        "",
+			Permissions: gocto.Permissions{},
+			Needs:       dg.Needs,
+			If: fmt.Sprintf(
+				`${{ inputs.destination == '-' && ( inputs.destination-group == '-' || inputs.destination-group == '%s' ) }}`,
+				dg.Name,
+			),
+			RunsOn: []string{"ubuntu-latest"},
+			Strategy: gocto.Strategy{
+				Matrix: &gocto.Matrix{
+					Map: map[string][]gocto.StringOrInt{
+						"dest": lo.Map(dg.Destinations, func(dest v1alpha1.Destination, _ int) gocto.StringOrInt {
+							return gocto.StringOrInt{
+								StringValue: util.Ptr(v1alpha1.CoalesceSanitizeDestination(dest)),
+							}
+						}),
+					},
+				},
+			},
+			Steps: []gocto.Step{
+				{
+					Uses: "actions/checkout@v4",
+					With: map[string]any{
+						"fetch-depth":         0,
+						"persist-credentials": false,
+					},
+				},
+				// insert custom pre-deploy steps here
+				{
+					Name: "input-jq",
+					ID:   "input-jq",
+					Run: util.SprintfDedent(`
+						echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
+				`),
+				},
+				{
+					Uses: "./.github/actions/alveus-deploy",
+					With: map[string]any{
+						"target-revision": `${{ steps.input-jq.outputs.target-revision }}`,
+						"application-file": fmt.Sprintf(
+							`./.alveus/applications/%s/%s/${{ matrix.dest }}.yaml`,
+							service.Name,
+							dg.Name,
+						),
+						"git-commit-msg": fmt.Sprintf(
+							`deploy(%s): 🚀 to ${{ matrix.dest }}`,
+							dg.Name,
+						),
+					},
+				},
+			},
+		}
+	}
+
+	top = SetWorkflowFilenameWithAlveusPrefix(top)
+	return top, nil
 }
