@@ -76,7 +76,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        group: [mock-staging]
         dest: [in-cluster, cluster2]
     steps:
       - uses: actions/checkout@v4
@@ -93,9 +92,9 @@ jobs:
       - uses: ./.github/actions/alveus-deploy
         with:
           target-revision: ${{ steps.input-jq.outputs.target-revision }}
-          application-file: "./.alveus/applications/podinfo-${{ matrix.group }}-${{ matrix.dest }}.yaml"
+          application-file: "./.alveus/applications/podinfo-mock-staging-${{ matrix.dest }}.yaml"
           git-commit-msg: |
-            deploy(${{ matrix.group }}): 🚀 to ${{ matrix.dest }}
+            deploy(mock-staging): 🚀 to ${{ matrix.dest }}
 
   mock-prod:
     if: ${{ inputs.destination == '-' && ( inputs.destination-group == '-' || inputs.destination-group == 'mock-prod' ) }}
@@ -103,7 +102,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        group: [mock-prod]
         dest: [in-cluster, cluster2, cluster3]
     steps:
       - uses: actions/checkout@v4
@@ -120,6 +118,6 @@ jobs:
       - uses: ./.github/actions/alveus-deploy
         with:
           target-revision: ${{ steps.input-jq.outputs.target-revision }}
-          application-file: "./.alveus/applications/podinfo-${{ matrix.group }}-${{ matrix.dest }}.yaml"
+          application-file: "./.alveus/applications/podinfo-mock-prod-${{ matrix.dest }}.yaml"
           git-commit-msg: |
-            deploy(${{ matrix.group }}): 🚀 to ${{ matrix.dest }}
+            deploy(mock-prod): 🚀 to ${{ matrix.dest }}
