@@ -92,7 +92,7 @@ jobs:
       - uses: ./.github/actions/alveus-deploy
         with:
           target-revision: ${{ steps.input-jq.outputs.target-revision }}
-          application-file: "./.alveus/applications/podinfo-mock-staging-${{ matrix.dest }}.yaml"
+          application-file: "./.alveus/applications/podinfo/mock-staging/${{ matrix.dest }}.yaml"
           git-commit-msg: |
             deploy(mock-staging): 🚀 to ${{ matrix.dest }}
 
@@ -118,6 +118,6 @@ jobs:
       - uses: ./.github/actions/alveus-deploy
         with:
           target-revision: ${{ steps.input-jq.outputs.target-revision }}
-          application-file: "./.alveus/applications/podinfo-mock-prod-${{ matrix.dest }}.yaml"
+          application-file: "./.alveus/applications/podinfo/mock-prod/${{ matrix.dest }}.yaml"
           git-commit-msg: |
             deploy(mock-prod): 🚀 to ${{ matrix.dest }}
