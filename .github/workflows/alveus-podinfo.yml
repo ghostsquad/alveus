@@ -16,8 +16,10 @@ name: deploy-podinfo
         type: choice
         options:
           - "-"
-          - '{"group":"mock-prod","cluster":"in-cluster"}'
-          - '{"group":"mock-staging","cluster":"in-cluster"}'
+          - '{"group":"mock-staging","cluster":"in-cluster","ns":"podinfo"}'
+          - '{"group":"mock-staging","cluster":"cluster2","ns":"podinfo"}'
+          - '{"group":"mock-prod","cluster":"in-cluster","ns":"podinfo"}'
+          - '{"group":"mock-prod","cluster":"cluster2","ns":"podinfo"}'
       revision-to-deploy:
         description: the revision to deploy
         required: true
@@ -58,11 +60,13 @@ jobs:
       run:
         echo "group=${{ fromJSON(inputs.destination).group }}" >> $GITHUB_OUTPUT
         echo "cluster=${{ fromJSON(inputs.destination).cluster }}" >> $GITHUB_OUTPUT
+        echo "ns=${{ fromJSON(inputs.destination).ns }}" >> $GITHUB_OUTPUT
         echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
     - uses: ./.github/actions/alveus-deploy
       with:
         target-revision: ${{ steps.input-jq.outputs.target-revision }}
         application-file: "./.alveus/applications/podinfo-${{ steps.input-jq.outputs.group }}-${{ steps.input-jq.outputs.cluster }}.yaml"
+        namespace: ${{ steps.input-jq.outputs.ns }}
         git-commit-msg: |
           deploy(${{ steps.input-jq.outputs.group }}): 🚀 to ${{ steps.input-jq.outputs.cluster }}
 
