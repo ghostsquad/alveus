@@ -1,0 +1,7 @@
+[staging]
+cluster1 = {}
+cluster2 = {}
+
+[prod]
+cluster3 = {}
+cluster4 = {}

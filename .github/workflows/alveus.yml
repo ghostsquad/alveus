@@ -1,0 +1,69 @@
+name: alveus
+"on":
+  workflow_call:
+    inputs:
+      destination-group:
+        description: the destination group to deploy
+        required: true
+        type: string
+      target-revision:
+        description: the revision to deploy
+        required: true
+        type: string
+      alveus-file:
+        description: alveus file containing deployment metadata
+        type: string
+        required: true
+      argocd-server-default:
+        description: ARGOCD_SERVER environment variable
+        type: string
+      argocd-opts:
+        description: ARGOCD_OPTS environment variable
+        type: string
+        default: --grpc-web --insecure
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ARGOCD_SERVER: ${{ inputs.argocd-server-default }}
+  ARGOCD_OPTS: ${{ inputs.argocd-opts }}
+
+jobs:
+  pre-deploy:
+    runs-on: ubuntu-latest
+    outputs:
+      group: ${{ steps.get-group.outputs.data }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+      - uses: cssnr/toml-action@9e2cf02afd20567170966cdba32e68a523f9727f # v1.0.1
+        id: get-group
+        with:
+          file: ${{ inputs.alveus-file }}
+          path: '$.${{ inputs.destination-group }}'
+      - uses: ./.github/actions/app-update
+        with:
+          target-revision: ${{ inputs.target-revision }}
+          applications: ${{ steps.get-group.outputs.data }}
+          commit-message: |-
+            deploy(mock-staging): 🚀 to ${{ matrix.dest }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: pre-deploy
+    strategy:
+      matrix:
+        destination: ${{ needs.pre-deploy.outputs.group }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: dcarbone/install-jq-action@b7ef57d46ece78760b4019dbc4080a1ba2a40b45 # v3.2.0
+      # resolve specifics from destination vs input defaults
+      - uses: ./.github/actions/app-sync
+        with:
+          application-file: ${{ matrix.destination }}

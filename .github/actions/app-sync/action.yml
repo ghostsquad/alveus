@@ -1,0 +1,32 @@
+name: app-sync
+author: ghostsquad
+description: upserts and syncs applications
+inputs:
+  application-file:
+    description: Path to application to upsert & sync
+    required: true
+  timeout:
+    description: Time out after this many seconds
+    required: false
+    default: "30"
+
+runs:
+  using: "composite"
+  steps:
+  - uses: frenck/action-setup-yq@c4b5be8b4a215c536a41d436757d9feb92836d4f # v1.0.2
+  - name: argocd-upsert
+    shell: bash
+    run: |-
+      argocd app create \
+        --upsert \
+        --file '${{ inputs.application-file }}' \
+        --prompts-enabled=false \
+        ;
+  - name: argocd-sync
+    shell: bash
+    run: |-
+      APPNAME=$(yq '.metadata.name' '${{ inputs.application-file }}')
+      argocd app sync \
+        "${APPNAME}" \
+        --timeout ${{ inputs.timeout }} \
+        ;

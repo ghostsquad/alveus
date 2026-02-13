@@ -1,9 +1,0 @@
-name: example-service-staging
-"on":
-  workflow_call: {}
-  workflow_dispatch: {}
-jobs:
-  kube-local:
-    name: kube-local
-    uses: ./.github/workflows/alveus-example-service-staging-kube-local.yml
-    secrets: inherit

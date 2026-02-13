@@ -8,27 +8,15 @@ name: deploy-podinfo
         type: choice
         options:
         - "-"
-        - mock-staging
-        - mock-prod
-      destination:
-        description: the destination to deploy (mutually exclusive with destination-group, default "-" for all destinations)
-        required: false
-        type: choice
-        options:
-          - "-"
-          - '{"group":"mock-staging","cluster":"in-cluster","ns":"podinfo"}'
-          - '{"group":"mock-staging","cluster":"cluster2","ns":"podinfo"}'
-          - '{"group":"mock-prod","cluster":"in-cluster","ns":"podinfo"}'
-          - '{"group":"mock-prod","cluster":"cluster2","ns":"podinfo"}'
-          - '{"group":"mock-prod","cluster":"cluster3","ns":"podinfo"}'
-      revision-to-deploy:
+        - staging
+        - prod
+      target-revision:
         description: the revision to deploy, default is github.sha
-        required: true
-        type: choice
-        options:
-        - "-"
-        - "abc123"
-        - "def456"
+        type: string
+      alveus-file:
+        description: alveus file containing deployment metadata
+        type: string
+        default: ./.config/alveus.toml
   push:
     paths:
     - .alveus/demo/manifests
@@ -39,85 +27,25 @@ defaults:
   run:
     shell: bash
 
-env:
-  ARGOCD_SERVER: argocd.example.com
-  ARGOCD_AUTH_TOKEN: abc123
-  ARGOCD_OPTS: --grpc-web
-
 jobs:
-  single:
-    if: ${{ inputs.destination != '-' && inputs.destination-group == '-' }}
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      target-revision: ${{ steps.get-target-revision.outputs.value }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        persist-credentials: false
-    - uses: jdx/mise-action@v3
-      with:
-        version: 2025.11.2
-    - name: input-jq
-      id: input-jq
-      run:
-        echo "group=${{ fromJSON(inputs.destination).group }}" >> $GITHUB_OUTPUT
-        echo "cluster=${{ fromJSON(inputs.destination).cluster }}" >> $GITHUB_OUTPUT
-        echo "ns=${{ fromJSON(inputs.destination).ns }}" >> $GITHUB_OUTPUT
-        echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
-    - uses: ./.github/actions/alveus-deploy
-      with:
-        target-revision: ${{ steps.input-jq.outputs.target-revision }}
-        application-file: "./.alveus/applications/podinfo/${{ steps.input-jq.outputs.group }}/${{ steps.input-jq.outputs.cluster }}.yaml"
-        namespace: ${{ steps.input-jq.outputs.ns }}
-        git-commit-msg: |
-          deploy(${{ steps.input-jq.outputs.group }}): 🚀 to ${{ steps.input-jq.outputs.cluster }}
+      - name: get target revision
+        id: get-target-revision
+        run: |-
+          if [ "${{ inputs.target-revision }}" == '-' ]; then
+            echo "value=${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "value=${{ inputs.target-revision }}" >> $GITHUB_OUTPUT
+          fi
 
-  mock-staging:
-    if:  ${{ inputs.destination == '-' && ( inputs.destination-group == '-' || inputs.destination-group == 'mock-staging' ) }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dest: [in-cluster, cluster2]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: jdx/mise-action@v3
-        with:
-          version: 2025.11.2
-      - name: input-jq
-        id: input-jq
-        run:
-          echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
-      - uses: ./.github/actions/alveus-deploy
-        with:
-          target-revision: ${{ steps.input-jq.outputs.target-revision }}
-          application-file: "./.alveus/applications/podinfo/mock-staging/${{ matrix.dest }}.yaml"
-          git-commit-msg: |
-            deploy(mock-staging): 🚀 to ${{ matrix.dest }}
-
-  mock-prod:
-    if: ${{ inputs.destination == '-' && ( inputs.destination-group == '-' || inputs.destination-group == 'mock-prod' ) }}
-    needs: mock-staging
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dest: [in-cluster, cluster2, cluster3]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: jdx/mise-action@v3
-        with:
-          version: 2025.11.2
-      - name: input-jq
-        id: input-jq
-        run:
-          echo "target-revision=${{ inputs.revision-to-deploy == '-' && github.sha || inputs.revision-to-deploy }}" >> $GITHUB_OUTPUT
-      - uses: ./.github/actions/alveus-deploy
-        with:
-          target-revision: ${{ steps.input-jq.outputs.target-revision }}
-          application-file: "./.alveus/applications/podinfo/mock-prod/${{ matrix.dest }}.yaml"
-          git-commit-msg: |
-            deploy(mock-prod): 🚀 to ${{ matrix.dest }}
+  staging:
+    uses: ./.github/workflows/alveus.yml
+    needs: setup
+    with:
+      alveus-file: ${{ inputs.alveus-file }}
+      destination-group: staging
+      target-revision: ${{ needs.analyze.outputs.target-revision }}
