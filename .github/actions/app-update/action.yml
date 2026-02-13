@@ -67,14 +67,14 @@ runs:
         readarray -t applications < <(jq --compact-output '.[]' '${{ steps.get-group-data.outputs.value }}')
         
         for item in "${applications[@]}"; do
-          application_file=$(jq --raw-output '.' <<< "$item")
+          application_file=$(jq --raw-output '.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
-            '${application_file}'
+            "${application_file}"
         
           if [ -n "${{ inputs.namespace }}" ]; then
             yq e -i '.spec.destination.namespace = "${{ inputs.namespace }}"' \
-            '${application_file}'
+            "${application_file}"
           fi
         done
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
