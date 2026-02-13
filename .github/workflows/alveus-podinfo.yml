@@ -18,8 +18,6 @@ name: deploy-podinfo
         type: string
         default: ./.config/alveus.toml
   push:
-    paths:
-    - .alveus/demo/manifests
     branches:
     - main
 
