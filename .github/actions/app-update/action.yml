@@ -76,7 +76,7 @@ runs:
         
         for item in "${applications[@]}"; do
           application_file=$(jq --raw-output '.' <<< "$item")
-        
+          echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
             '${application_file}'
         
