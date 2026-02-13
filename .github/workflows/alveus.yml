@@ -47,7 +47,7 @@ jobs:
       - uses: ./.github/actions/app-update
         with:
           target-revision: ${{ inputs.target-revision }}
-          applications: ${{ steps.get-group.outputs.data }}
+          group-data: ${{ steps.get-group.outputs.data }}
           commit-message: |-
             deploy(mock-staging): 🚀 to ${{ matrix.dest }}
 
