@@ -5,10 +5,9 @@ inputs:
   target-revision:
     description: The target revision to deploy
     required: true
-  applications:
-    description: JSON list of application files to update (mutually exclusive with `applications-file`)
-  applications-file:
-    description: a JSON file that contains a list of applications to update (mutually exclusive with `applications`)
+  group-data:
+    description: JSON object
+    required: true
   namespace:
     description: Namespace to use. If empty, application will not be modified
   commit-message:
@@ -55,24 +54,17 @@ runs:
   using: "composite"
   steps:
     - uses: frenck/action-setup-yq@c4b5be8b4a215c536a41d436757d9feb92836d4f # v1.0.2
-    - name: get-applications
-      id: get-applications
+    - name: get group data
+      id: get-group-data
       shell: bash
       run: |-
-        if [ -n '${{ inputs.applications-file }}' ]; then
-          echo 'applications-file=${{ inputs.applications-file }}' >> $GITHUB_OUTPUT
-          exit 0
-        fi
-        
-        if [ -n '${{ inputs.applications }}' ]; then
-          filename=${{ runner.temp }}/applications.json
-          echo '${{ inputs.applications }}' > "${filename}"
-          echo "applications-file=${filename}" >> $GITHUB_OUTPUT
-        fi
+        filename=${{ runner.temp }}/applications.json
+        echo '${{ inputs.group-data }}' > "${filename}"
+        echo "value=${filename}" >> $GITHUB_OUTPUT
     - name: update-application-yaml
       shell: bash
       run: |-
-        readarray -t applications < <(jq --compact-output '.[]' '${{ steps.get-applications.outputs.applications-file }}')
+        readarray -t applications < <(jq --compact-output '.[]' '${{ steps.get-group-data.outputs.value }}')
         
         for item in "${applications[@]}"; do
           application_file=$(jq --raw-output '.' <<< "$item")
