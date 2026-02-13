@@ -16,7 +16,6 @@ name: deploy-podinfo
       alveus-file:
         description: alveus file containing deployment metadata
         type: string
-        default: ./.config/alveus.toml
   push:
     branches:
     - main
@@ -29,21 +28,30 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      target-revision: ${{ steps.get-target-revision.outputs.value }}
+      target-revision: ${{ steps.resolve-target-revision.outputs.value }}
+      alveus-file: ${{ steps.resolve-alveus-file.outputs.value }}
     steps:
-      - name: get target revision
-        id: get-target-revision
+      - name: resolve target revision
+        id: resolve-target-revision
         run: |-
           if [ "${{ inputs.target-revision }}" == '-' ]; then
             echo "value=${{ github.sha }}" >> $GITHUB_OUTPUT
           else
             echo "value=${{ inputs.target-revision }}" >> $GITHUB_OUTPUT
           fi
+      - name: resolve alveus file
+        id: resolve-alveus-file
+        run: |-
+          if [ -z "${{ inputs.alveus-file }}" ]; then
+            echo "value=./.config/alveus.toml" >> $GITHUB_OUTPUT
+          else
+            echo "value=${{ inputs.alveus-file }}" >> $GITHUB_OUTPUT
+          fi
 
   staging:
     uses: ./.github/workflows/alveus.yml
     needs: setup
     with:
-      alveus-file: ${{ inputs.alveus-file }}
       destination-group: staging
-      target-revision: ${{ needs.analyze.outputs.target-revision }}
+      alveus-file: ${{ needs.setup.outputs.alveus-file }}
+      target-revision: ${{ needs.setup.outputs.target-revision }}
