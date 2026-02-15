@@ -24,6 +24,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  id-token: write # This is required for requesting the JWT
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -50,8 +53,9 @@ jobs:
 
   staging:
     uses: ./.github/workflows/alveus.yml
-    needs: setup
+    needs: [setup]
     with:
       destination-group: staging
       alveus-file: ${{ needs.setup.outputs.alveus-file }}
       target-revision: ${{ needs.setup.outputs.target-revision }}
+      argocd-server-default: argocd.example.com

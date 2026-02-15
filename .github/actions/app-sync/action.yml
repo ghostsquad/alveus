@@ -14,7 +14,59 @@ runs:
   using: "composite"
   steps:
   - uses: frenck/action-setup-yq@c4b5be8b4a215c536a41d436757d9feb92836d4f # v1.0.2
+  # Actions have access to two special environment variables ACTIONS_CACHE_URL and ACTIONS_RUNTIME_TOKEN.
+  # Inline step scripts in workflows do not see these variables.
+  - uses: actions/github-script@v6
+    id: script
+    with:
+      debug: true
+      script: |-
+        const token = process.env['ACTIONS_RUNTIME_TOKEN']
+        const runtimeUrl = process.env['ACTIONS_ID_TOKEN_REQUEST_URL']
+        core.setOutput('TOKEN', token.trim())
+        core.setOutput('IDTOKENURL', runtimeUrl.trim())
+  - name: Obtain access token
+    id: idtoken
+    shell: bash
+    run: |-
+      # get an token from github
+      echo "getting token from GitHub"
+      GH_TOKEN_RESPONSE=$(curl -sSf \
+        "${{steps.script.outputs.IDTOKENURL}}" \
+        -H "Authorization: bearer  ${{steps.script.outputs.TOKEN}}" \
+        -H "Accept: application/json; api-version=2.0" \
+        -H "Content-Type: application/json" \
+        -d "{}" \
+      )
+      GH_TOKEN=$(jq -r .value <<< $GH_TOKEN_RESPONSE)
+      echo "::add-mask::$GH_TOKEN"
+
+      # exchange it for a dex token
+      DEX_URL="https://argocd.example.com/api/dex/token"
+      echo "getting access token from Dex: $DEX_URL"
+      DEX_TOKEN_RESPONSE=$(curl -sSf \
+          "$DEX_URL" \
+          --user argo-cd-cli: \
+          --data-urlencode "connector_id=github-actions" \
+          --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+          --data-urlencode "scope=openid email profile federated:id" \
+          --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+          --data-urlencode "subject_token=$GH_TOKEN" \
+          --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token")
+      DEX_TOKEN=$(jq -r .access_token <<< $DEX_TOKEN_RESPONSE)
+
+      if [[ -z "$DEX_TOKEN" ]]; then
+        echo "::error::No token found in dex response"
+        exit 1
+      fi
+
+      echo "::add-mask::$(echo "$DEX_TOKEN" | base64 -w0)"
+      echo "::add-mask::$DEX_TOKEN"
+      echo "dex-token=$DEX_TOKEN" >> "$GITHUB_OUTPUT"
+      # use $DEX_TOKEN
   - name: argocd-upsert
+    env:
+      ARGOCD_AUTH_TOKEN: ${{ steps.idtoken.outputs.dex-token }}
     shell: bash
     run: |-
       argocd app create \
@@ -23,6 +75,8 @@ runs:
         --prompts-enabled=false \
         ;
   - name: argocd-sync
+    env:
+      ARGOCD_AUTH_TOKEN: ${{ steps.idtoken.outputs.dex-token }}
     shell: bash
     run: |-
       APPNAME=$(yq '.metadata.name' '${{ inputs.application-file }}')

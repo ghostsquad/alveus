@@ -17,6 +17,7 @@ name: alveus
       argocd-server-default:
         description: ARGOCD_SERVER environment variable
         type: string
+        required: true
       argocd-opts:
         description: ARGOCD_OPTS environment variable
         type: string

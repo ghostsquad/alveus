@@ -19,57 +19,97 @@
 >    1. (_rare, now usually law_) The bed or channel of a river, especially when the river flowing in its natural or ordinary course; (also) the trough of the sea.
 >    2. (_neuroanatomy_) A thin layer of medullary nerve fibers on the ventricular surface of the hippocampus.
 
-Generates GitHub workflows to allow for progressive delivery of Kubernetes resources across environments.
-
-This initial version of Alveus uses GitHub actions as it's "execution platform", and ArgoCD to manage state.
+Workflows and documentation for a GitOps approach to deploying directly from Github to ArgoCD.
 
 ## Getting Started
 
-Scenario: Staging -> Prod
-Facts:
-- The name of the service you wish to deploy is called `podinfo`
-- You have 2 distinct clusters to deploy to (staging & prod)
-- You have 1 ArgoCD instance (overseeing both staging & prod clusters)
-- You have 1 Service to manage
+https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/github-actions/#using-dex
+
+Edit the argocd-cm and configure the dex.config section:
 
 ```yaml
-name: podinfo
-destinationGroups:
-- name: mock-staging
-  destinations:
-  - name: in-cluster
-- name: mock-prod
-  needs: [mock-staging]
-  destinations:
-  - name: in-cluster
-destinationNamespace: podinfo
-argoCD:
-  source:
-    path: .alveus/demo/manifests
-  loginCommandArgs:
-    - e02a16d5f0fa.ngrok-free.app
-    - --username admin
-    - --password ${{ secrets.ARGOCD_ADMIN_PASSWORD }}
-    - --insecure
-  extraArgs:
-    - --insecure
-github:
-  "on":
-    push:
-      paths:
-      - .alveus/demo/manifests
-      branches:
-      - main
-  preDeploySteps:
-    - uses: jdx/mise-action@v3
-      with:
-        version: 2025.10.17
-    - name: create-kube-config
-      run: |
-        mkdir -p ~/.kube
-        echo "${{ secrets.KUBE_CONFIG_B64 }}" | base64 -d > ~/.kube/config
+dex.config: |
+  connectors:
+    - type: oidc
+      id: github-actions
+      name: GitHub Actions
+      config:
+        issuer: https://token.actions.githubusercontent.com/
+        # If using GitHub Enterprise Server, then use this issuer:
+        #issuer: https://github.example.com/_services/token
+        scopes: [openid]
+        userNameKey: sub
+        insecureSkipEmailVerified: true
 
 ```
+
+When using ArgoCD v3.0.0 or later, then you define your policy.csv like so:
+
+```yaml
+configs:
+  rbac:
+    policy.csv: |
+      p, repo:my-org/my-repo:pull_request, projects, get, my-project, allow
+      p, repo:my-org/my-repo:pull_request, applications, get, my-project/*, allow
+      p, repo:my-org/my-repo:pull_request, applicationsets, get, my-project/*, allow
+```
+
+### Example GitHub Subject Claims
+
+#### Environment
+
+The subject claim includes the environment name when the job references an environment.
+
+Syntax: `repo:ORG-NAME/REPO-NAME:environment:ENVIRONMENT-NAME`
+
+Example: `repo:octo-org/octo-repo:environment:Production`
+
+#### Pull Request
+
+The subject claim includes the pull_request string when the workflow is triggered by a pull request event,
+but only if the job doesn't reference an environment.
+
+Syntax: `repo:ORG-NAME/REPO-NAME:pull_request`
+
+Example: `repo:octo-org/octo-repo:pull_request`
+
+#### Branch
+
+The subject claim includes the branch name of the workflow,
+but only if the job doesn't reference an environment, 
+and if the workflow is not triggered by a pull request event.
+
+Syntax: `repo:ORG-NAME/REPO-NAME:ref:refs/heads/BRANCH-NAME`
+
+Example: `repo:octo-org/octo-repo:ref:refs/heads/demo-branch`
+
+#### Tag
+
+The subject claim includes the tag name of the workflow, 
+but only if the job doesn't reference an environment, 
+and if the workflow is not triggered by a pull request event.
+
+Syntax: `repo:ORG-NAME/REPO-NAME:ref:refs/tags/TAG-NAME`
+
+Example: `repo:octo-org/octo-repo:ref:refs/tags/demo-tag`
+
+#### Filtering for metadata containing `:`
+
+Any `:` within the metadata values will be replaced with `%3A` in the subject claim.
+
+You can configure a subject that includes metadata containing colons. 
+
+In this example, the workflow run must have originated from a job that has an environment named `Production:V1`,
+in a repository named octo-repo that is owned by the octo-org organization:
+
+Syntax: `repo:ORG-NAME/REPO-NAME:environment:ENVIRONMENT-NAME`
+
+Example: `repo:octo-org/octo-repo:environment:Production%3AV1`
+
+
+More info: 
+- [ArgoCD RBAC Configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/)
+- [How GitHub configures the `sub` field](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims)
 
 ## Contributing
 
