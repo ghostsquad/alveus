@@ -46,7 +46,7 @@ jobs:
         id: resolve-alveus-file
         run: |-
           if [ -z "${{ inputs.alveus-file }}" ]; then
-            echo "value=./.config/alveus.toml" >> $GITHUB_OUTPUT
+            echo "value=./.config/alveus.yaml" >> $GITHUB_OUTPUT
           else
             echo "value=${{ inputs.alveus-file }}" >> $GITHUB_OUTPUT
           fi
