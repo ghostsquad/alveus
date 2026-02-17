@@ -84,3 +84,4 @@ jobs:
           argocd-server-url: ${{ format('https://{0}', inputs.argocd-server-default) }}
           application-file: ${{ matrix.destination.applicationFile }}
           port-forward-log: ${{ steps.setup-demo.outputs.port-forward-log }}
+          dex-curl-options: ${{ inputs.demo-mode && '--insecure' || '' }}

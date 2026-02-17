@@ -15,6 +15,9 @@ inputs:
   port-forward-log:
     description: the path to the port-forward-log
     default: "/dev/null"
+  dex-curl-options:
+    description: curl options when making the request to dex
+    default: ""
 
 runs:
   using: "composite"
@@ -68,6 +71,7 @@ runs:
       response_header_file='${{ runner.temp }}/dex-response-headers.txt'
       
       if DEX_TOKEN_RESPONSE=$(curl -sS --fail-with-body --dump-header "${response_header_file}" \
+          ${{ inputs.dex-curl-options }} \
           "$DEX_URL" \
           --user argo-cd-cli: \
           --data-urlencode "connector_id=github-actions" \
