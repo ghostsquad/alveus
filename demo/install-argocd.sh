@@ -54,7 +54,7 @@ echo "::endgroup::"
 #argocd-cmd-params-cm
 
 yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data."server.api.content.types") = ""' $MYTMPDIR/install.yaml
-yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data."server.log.level") = "debug"' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data."server.log.level") = "trace"' $MYTMPDIR/install.yaml
 
 echo "::group::DEBUG argocd-cmd-params-cm"
 yq 'select(.metadata.name == "argocd-cmd-params-cm") | .' $MYTMPDIR/install.yaml
