@@ -9,8 +9,6 @@ inputs:
 
 runs:
   using: "composite"
-  env:
-    KIND_CLUSTER_NAME: ${{ inputs.cluster-name }}
   steps:
     - uses: frenck/action-setup-yq@c4b5be8b4a215c536a41d436757d9feb92836d4f # v1.0.2
     - name: Create k8s Kind Cluster
@@ -22,3 +20,5 @@ runs:
       run: |-
         ./scripts/demo/install-argocd.sh
       shell: bash
+      env:
+        KIND_CLUSTER_NAME: ${{ inputs.cluster-name }}
