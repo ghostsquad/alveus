@@ -54,11 +54,10 @@ done
 
 SERVICE_NAME="argocd-server"
 SERVICE_NAMESPACE="argocd"
-# The port on the pod that your application is listening on
-SERVICE_PORT="80"
-# The local port you want to use to access the pod
+SERVICE_PORT="443"
+# The local port you want to use to access the service
 LOCAL_PORT="8080"
-PORT_FORWARD_LOG="$PORT_FORWARD_TEMP_DIR/k8s-pod-forward.$RANDOM.log"
+PORT_FORWARD_LOG="$PORT_FORWARD_TEMP_DIR/k8s-port-forward.$RANDOM.log"
 
 echo "Attempting to port-forward ${LOCAL_PORT}:${SERVICE_PORT} to service '${SERVICE_NAME}' in namespace '${SERVICE_NAMESPACE}' on cluster '${KIND_CLUSTER_NAME}'..."
 # Start port-forwarding in the background
