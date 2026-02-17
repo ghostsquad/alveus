@@ -49,6 +49,11 @@ runs:
         echo "::endgroup::"
         exit 1
       fi
+      
+      echo "::group::DEBUG GH_TOKEN_RESPONSE (RAW)"
+      echo "${GH_TOKEN_RESPONSE}"
+      echo "::endgroup::"
+      
       GH_TOKEN=$(jq -r .value <<< $GH_TOKEN_RESPONSE)
       echo "::add-mask::$GH_TOKEN"
 
@@ -63,7 +68,7 @@ runs:
           --data-urlencode "scope=openid email profile federated:id" \
           --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
           --data-urlencode "subject_token=$GH_TOKEN" \
-          --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token"\
+          --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token" \
       ); then
         echo "DEX_TOKEN_RESPONSE request failed!"
         echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
