@@ -25,6 +25,7 @@ defaults:
     shell: bash
 
 permissions:
+  contents: write # required to commit and push changes files to the repository
   id-token: write # This is required for requesting the JWT
 
 jobs:
