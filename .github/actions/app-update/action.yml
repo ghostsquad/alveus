@@ -74,7 +74,7 @@ runs:
         echo "</DEBUG destination_group_entries>"
         
         destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
-        echo "matrix-data=${destination_data_entries_compact}" >> $GITHUB_OUTPUT
+        echo "matrix-data=${destination_data_entries_compact}" | jq --compact-output '.' >> $GITHUB_OUTPUT
         
         echo "<DEBUG destination_group_entries_compact>"
         echo "${destination_group_entries_compact}"
@@ -103,9 +103,9 @@ runs:
           ${{ steps.update-application-yaml.outputs.matrix-data }}
         EOF
 
-        echo "<DEBUG needs.pre-deploy.outputs.matrix-data>"
+        echo "<DEBUG steps.update-application-yaml.outputs.matrix-data>"
         echo "${matrix_data}"
-        echo "</DEBUG needs.pre-deploy.outputs.matrix-data>"
+        echo "</DEBUG steps.update-application-yaml.outputs.matrix-data>"
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
       with:
         commit_message: ${{ inputs.commit-message }}
