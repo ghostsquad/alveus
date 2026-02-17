@@ -58,8 +58,7 @@ SERVICE_NAMESPACE="argocd"
 SERVICE_PORT="80"
 # The local port you want to use to access the pod
 LOCAL_PORT="8080"
-echo "Attempting to port-forward to service '${SERVICE_NAME}' in namespace '${SERVICE_NAMESPACE}' on cluster '${KIND_CLUSTER_NAME}'..."
-
+echo "Attempting to port-forward ${LOCAL_PORT}:${SERVICE_PORT} to service '${SERVICE_NAME}' in namespace '${SERVICE_NAMESPACE}' on cluster '${KIND_CLUSTER_NAME}'..."
 # Start port-forwarding in the background
 # The --kubeconfig flag might be needed if your kubeconfig is not in the default location
 kubectl port-forward svc/"${SERVICE_NAME}" -n "${SERVICE_NAMESPACE}" "${LOCAL_PORT}:${SERVICE_PORT}" &
@@ -67,4 +66,4 @@ kubectl port-forward svc/"${SERVICE_NAME}" -n "${SERVICE_NAMESPACE}" "${LOCAL_PO
 # Give the port-forward process a moment to establish
 sleep 5
 
-echo "Port-forwarding established..."
+echo "Port-forwarding ${LOCAL_PORT}:${SERVICE_PORT} established..."

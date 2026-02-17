@@ -69,29 +69,29 @@ runs:
         echo 'destination-group: ${{ inputs.destination-group }}'
         destination_group_entries=$(yq --output-format=json '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
 
-        echo "<DEBUG destination_group_entries>"
+        echo "::group::DEBUG destination_group_entries"
         echo "${destination_group_entries}"
-        echo "</DEBUG destination_group_entries>"
+        echo "::endgroup::"
 
         destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.')
 
-        echo "<DEBUG destination_group_entries_compact>"
+        echo "::group::DEBUG destination_group_entries_compact"
         echo "${destination_group_entries_compact}"
-        echo "</DEBUG destination_group_entries_compact>"
+        echo "::endgroup::"
 
         echo "matrix-data=${destination_group_entries_compact}" >> $GITHUB_OUTPUT
         
         destination_group_entries_loop=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
         
-        echo "<DEBUG destination_group_entries_loop>"
+        echo "::group::DEBUG destination_group_entries_loop"
         echo "${destination_group_entries_loop}"
-        echo "</DEBUG destination_group_entries_loop>"
+        echo "::endgroup::"
 
         while read item
         do  
-          echo "<DEBUG item>"
+          echo "::group::DEBUG item"
           echo "${item}"
-          echo "</DEBUG>"
+          echo "::endgroup::"
 
           application_file=$(jq --raw-output '.value.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
@@ -106,9 +106,9 @@ runs:
     - name: debug step output
       shell: bash
       run: |-
-        echo "<DEBUG steps.update-application-yaml.outputs.matrix-data>"
+        echo "::group::DEBUG steps.update-application-yaml.outputs.matrix-data"
         echo '${{ steps.update-application-yaml.outputs.matrix-data }}'
-        echo "</DEBUG steps.update-application-yaml.outputs.matrix-data>"
+        echo "::endgroup::"
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
       with:
         commit_message: ${{ inputs.commit-message }}

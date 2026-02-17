@@ -56,6 +56,15 @@ runs:
           --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
           --data-urlencode "subject_token=$GH_TOKEN" \
           --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token")
+      
+      echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
+      echo "${DEX_TOKEN_RESPONSE}"
+      echo "::endgroup::"
+      
+      echo "::group::DEBUG DEX_TOKEN_RESPONSE (JSON)"
+      echo "${DEX_TOKEN_RESPONSE}" | jq '.'
+      echo "::endgroup::"
+      
       DEX_TOKEN=$(jq -r .access_token <<< $DEX_TOKEN_RESPONSE)
 
       if [[ -z "$DEX_TOKEN" ]]; then
