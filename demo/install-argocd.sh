@@ -13,7 +13,7 @@ kubectl create namespace argocd
 kubectl config set-context --current --namespace=argocd
 curl -sSL https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml -o $MYTMPDIR/install.yaml
 
-dex_config=$(cat <<EOF
+export DEX_CONFIG=$(cat <<EOF
 connectors:
   - type: oidc
     id: github-actions
@@ -26,19 +26,19 @@ connectors:
 EOF
 )
 
-yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv("dex_config")' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv("DEX_CONFIG")' $MYTMPDIR/install.yaml
 
 echo "::group::DEBUG argocd-cm"
 yq 'select(.metadata.name == "argocd-cm") | .' $MYTMPDIR/install.yaml
 echo "::endgroup::"
 
-policy_csv=$(cat <<EOF
+export POLICY_CSV=$(cat <<EOF
 p, repo:ghostsquad/alveus:pull_request, applications, action/*, *, allow
 p, repo:ghostsquad/alveus:ref:refs/heads/main, applications, action/*, *, allow
 EOF
 )
 
-yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv("policy_csv")' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv("POLICY_CSV")' $MYTMPDIR/install.yaml
 
 echo "::group::DEBUG argocd-rbac-cm"
 yq 'select(.metadata.name == "argocd-rbac-cm") | .' $MYTMPDIR/install.yaml
