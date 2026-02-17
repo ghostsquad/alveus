@@ -52,7 +52,7 @@ while ! [[ "$(kubectl get pods -o jsonpath='{.items[*].status.containerStatuses[
     echo "Waiting for ArgoCD to be ready."
 done
 
-SERVICE_NAME=""
+SERVICE_NAME="argocd-server"
 SERVICE_NAMESPACE="argocd"
 # The port on the pod that your application is listening on
 SERVICE_PORT="80"
