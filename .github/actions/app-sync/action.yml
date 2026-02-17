@@ -65,10 +65,10 @@ runs:
       GH_TOKEN=$(jq -r .value <<< $GH_TOKEN_RESPONSE)
       echo "::add-mask::$GH_TOKEN"
       
-      echo "::group::DEBUG /api/dex/.well-known/openid-configuration"
-      curl -v -sS --fail-with-body ${{ inputs.dex-curl-options }} \
-        "${{ inputs.argocd-server-url }}/api/dex/.well-known/openid-configuration"
-      echo "::endgroup::"
+#      echo "::group::DEBUG /api/dex/.well-known/openid-configuration"
+#      curl -v -sS --fail-with-body ${{ inputs.dex-curl-options }} \
+#        "${{ inputs.argocd-server-url }}/api/dex/.well-known/openid-configuration"
+#      echo "::endgroup::"
 
       # exchange it for a dex token
       DEX_URL="${{ inputs.argocd-server-url }}/api/dex/token"
