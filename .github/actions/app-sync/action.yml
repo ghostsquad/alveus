@@ -2,6 +2,9 @@ name: app-sync
 author: ghostsquad
 description: upserts and syncs applications
 inputs:
+  argocd-server-url:
+    description: The URL to use for the ArgoCD server (e.g. `http://localhost:8080`)
+    required: true
   application-file:
     description: Path to application to upsert & sync
     required: true
@@ -42,7 +45,7 @@ runs:
       echo "::add-mask::$GH_TOKEN"
 
       # exchange it for a dex token
-      DEX_URL="https://argocd.example.com/api/dex/token"
+      DEX_URL="${{ inputs.argocd-server-url }}/api/dex/token"
       echo "getting access token from Dex: $DEX_URL"
       DEX_TOKEN_RESPONSE=$(curl -sSf \
           "$DEX_URL" \

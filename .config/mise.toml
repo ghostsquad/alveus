@@ -1,3 +1,4 @@
 [tools]
 argocd = "3.1.0"
+kubectl = "1.33.2"
 lefthook = "1.13.6"

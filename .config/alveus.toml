@@ -1,6 +1,6 @@
 [staging]
-cluster1 = {}
-cluster2 = {}
+cluster1 = { applicationFile="./demo/staging-1.yml" }
+cluster2 = { applicationFile="./demo/staging-2.yml" }
 
 [prod]
 cluster3 = {}

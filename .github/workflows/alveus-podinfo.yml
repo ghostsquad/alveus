@@ -58,4 +58,5 @@ jobs:
       destination-group: staging
       alveus-file: ${{ needs.setup.outputs.alveus-file }}
       target-revision: ${{ needs.setup.outputs.target-revision }}
-      argocd-server-default: argocd.example.com
+      argocd-server-default: argocd.localhost
+      demo-mode: true
