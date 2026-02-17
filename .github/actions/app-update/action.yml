@@ -83,10 +83,16 @@ runs:
         
         echo "matrix-data=${destination_data_entries_compact}" >> $GITHUB_OUTPUT
         
-        readarray -t destination_data_entries < <(echo "${destination_data_entries_compact}" | jq '.')
+        readarray -t destination_data_entries < <(echo "${destination_data_entries_compact}")
         
         for item in "${destination_data_entries[@]}"; do
-          application_file=$(jq --raw-output '.applicationFile' <<< "$item")
+          echo "<DEBUG item>"
+          echo ""
+          echo "${item}"
+          echo ""
+          echo "</DEBUG>"
+        
+          application_file=$(jq --raw-output '.value.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
             "${application_file}"
