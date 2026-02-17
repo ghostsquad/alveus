@@ -80,6 +80,7 @@ runs:
           --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
           --data-urlencode "subject_token=$GH_TOKEN" \
           --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
       ); then
         echo "DEX_TOKEN_RESPONSE request success"
       else
