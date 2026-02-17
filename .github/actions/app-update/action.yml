@@ -96,7 +96,16 @@ runs:
             "${application_file}"
           fi
         done < <(echo "${destination_group_entries_compact}")
+    - name: debug step output
+      shell: bash
+      run: |-
+        IFS='' read -r -d '' matrix_data <<"EOF"
+          ${{ steps.update-application-yaml.outputs.matrix-data }}
+        EOF
 
+        echo "<DEBUG needs.pre-deploy.outputs.matrix-data>"
+        echo "${matrix_data}"
+        echo "</DEBUG needs.pre-deploy.outputs.matrix-data>"
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
       with:
         commit_message: ${{ inputs.commit-message }}

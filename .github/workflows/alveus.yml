@@ -66,6 +66,14 @@ jobs:
           # required to commit changes back to the same repo
           persist-credentials: true
       # resolve specifics from destination vs input defaults
+      - run: |-
+          IFS='' read -r -d '' matrix_data <<"EOF"
+            ${{ needs.pre-deploy.outputs.matrix-data }}
+          EOF
+          
+          echo "<DEBUG needs.pre-deploy.outputs.matrix-data>"
+          echo "${matrix_data}"
+          echo "</DEBUG needs.pre-deploy.outputs.matrix-data>"
       - uses: ./.github/actions/setup-demo
         id: setup-demo
         if: inputs.demo-mode
