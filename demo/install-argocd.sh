@@ -44,6 +44,20 @@ echo "::group::DEBUG argocd-rbac-cm"
 yq 'select(.metadata.name == "argocd-rbac-cm") | .' $MYTMPDIR/install.yaml
 echo "::endgroup::"
 
+#https://github.com/argoproj/argo-cd/pull/17331/changes
+#- name: ARGOCD_API_CONTENT_TYPES
+#  valueFrom:
+#    configMapKeyRef:
+#      key: server.api.content.types
+#      name: argocd-cmd-params-cm
+#      optional: true
+#argocd-cmd-params-cm
+
+yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data.server.api.content.types) = ""' $MYTMPDIR/install.yaml
+echo "::group::DEBUG argocd-cmd-params-cm"
+yq 'select(.metadata.name == "argocd-cmd-params-cm") | .' $MYTMPDIR/install.yaml
+echo "::endgroup::"
+
 kubectl apply -n argocd --server-side --force-conflicts -f $MYTMPDIR/install.yaml
 
 # let the CRDs finish installing
