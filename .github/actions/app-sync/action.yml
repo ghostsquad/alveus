@@ -36,20 +36,26 @@ runs:
 
       # get an token from github
       echo "getting token from GitHub"
-      GH_TOKEN_RESPONSE=$(curl -sSf \
+      if ! GH_TOKEN_RESPONSE=$(curl -sS --fail-with-body \
         '${{ steps.script.outputs.IDTOKENURL }}' \
         -H "Authorization: bearer  ${{ steps.script.outputs.TOKEN }}" \
         -H "Accept: application/json; api-version=2.0" \
         -H "Content-Type: application/json" \
         -d "{}" \
-      )
+      ); then
+        echo "GH_TOKEN request failed!"
+        echo "::group::DEBUG GH_TOKEN_RESPONSE (RAW)"
+        echo "${GH_TOKEN_RESPONSE}"
+        echo "::endgroup::"
+        exit 1
+      fi
       GH_TOKEN=$(jq -r .value <<< $GH_TOKEN_RESPONSE)
       echo "::add-mask::$GH_TOKEN"
 
       # exchange it for a dex token
       DEX_URL="${{ inputs.argocd-server-url }}/api/dex/token"
       echo "getting access token from Dex: $DEX_URL"
-      DEX_TOKEN_RESPONSE=$(curl -sSf \
+      if ! DEX_TOKEN_RESPONSE=$(curl -sS --fail-with-body \
           "$DEX_URL" \
           --user argo-cd-cli: \
           --data-urlencode "connector_id=github-actions" \
@@ -57,7 +63,14 @@ runs:
           --data-urlencode "scope=openid email profile federated:id" \
           --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
           --data-urlencode "subject_token=$GH_TOKEN" \
-          --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token")
+          --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token"\
+      ); then
+        echo "DEX_TOKEN_RESPONSE request failed!"
+        echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
+        echo "${DEX_TOKEN_RESPONSE}"
+        echo "::endgroup::"
+        exit 1
+      fi
       
       echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
       echo "${DEX_TOKEN_RESPONSE}"
