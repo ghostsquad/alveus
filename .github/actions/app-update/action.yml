@@ -80,7 +80,7 @@ runs:
         group_data_entries_compact=$(echo "${group_data}" | jq --compact-output '. | to_entries')
         echo "data=${group_data_entries_compact}" >> $GITHUB_OUTPUT
         
-        readarray -t group_data_entries < <(echo "${group_data_entries}")
+        readarray -t group_data_entries < <(echo "${group_data_entries_compact}" | jq '.')
         
         for item in "${group_data_entries[@]}"; do
           application_file=$(jq --raw-output '.applicationFile' <<< "$item")
