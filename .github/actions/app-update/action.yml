@@ -67,7 +67,7 @@ runs:
         
         echo "<DEBUG>"
         echo ""
-        cat "${group_data}"
+        echo "${group_data}"
         echo ""
         echo "</DEBUG>"
         
