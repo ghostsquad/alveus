@@ -66,9 +66,8 @@ runs:
       id: update-application-yaml
       shell: bash
       run: |-
-        filename=${{ runner.temp }}/applications.json
         echo 'destination-group: ${{ inputs.destination-group }}'
-        destination_group_entries=$(yq '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
+        destination_group_entries=$(yq --output-format=json '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
         
         echo "<DEBUG destination_group_entries>"
         echo ""
@@ -76,7 +75,7 @@ runs:
         echo ""
         echo "</DEBUG destination_group_entries>"
         
-        destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.')
+        destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
         echo "matrix-data=${destination_data_entries_compact}" >> $GITHUB_OUTPUT
         
         echo "<DEBUG destination_group_entries_compact>"
@@ -102,7 +101,7 @@ runs:
             yq e -i '.spec.destination.namespace = "${{ inputs.namespace }}"' \
             "${application_file}"
           fi
-        done < <(echo "${destination_data_entries_compact}" | jq -c '.[]')
+        done < <(echo "${destination_data_entries_compact}" | jq --compact-output '.[]')
 
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
       with:
