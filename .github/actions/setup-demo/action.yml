@@ -18,7 +18,7 @@ runs:
         cluster_name: ${{ inputs.cluster-name }}
     - name: Install ArgoCD
       run: |-
-        ./scripts/demo/install-argocd.sh
+        ./demo/install-argocd.sh
       shell: bash
       env:
         KIND_CLUSTER_NAME: ${{ inputs.cluster-name }}
