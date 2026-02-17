@@ -17,7 +17,8 @@ name: alveus
       argocd-server-default:
         description: ARGOCD_SERVER environment variable
         type: string
-        required: true
+        required: false
+        default: "localhost:8080"
       argocd-opts:
         description: ARGOCD_OPTS environment variable
         type: string
@@ -80,6 +81,6 @@ jobs:
         if: inputs.demo-mode
       - uses: ./.github/actions/app-sync
         with:
-          argocd-server-url: ${{ inputs.demo-mode && 'http://localhost:8080' || format('https://{0}', inputs.argocd-server-default) }}
+          argocd-server-url: ${{ format('https://{0}', inputs.argocd-server-default) }}
           application-file: ${{ matrix.destination.applicationFile }}
           port-forward-log: ${{ steps.setup-demo.outputs.port-forward-log }}
