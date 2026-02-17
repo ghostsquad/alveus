@@ -36,13 +36,15 @@ runs:
 
       # get an token from github
       echo "getting token from GitHub"
-      if ! GH_TOKEN_RESPONSE=$(curl -sS --fail-with-body \
+      if GH_TOKEN_RESPONSE=$(curl -sS --fail-with-body \
         '${{ steps.script.outputs.IDTOKENURL }}' \
         -H "Authorization: bearer  ${{ steps.script.outputs.TOKEN }}" \
         -H "Accept: application/json; api-version=2.0" \
         -H "Content-Type: application/json" \
         -d "{}" \
       ); then
+        echo "GH_TOKEN request success"
+      else
         echo "GH_TOKEN request failed!"
         echo "::group::DEBUG GH_TOKEN_RESPONSE (RAW)"
         echo "${GH_TOKEN_RESPONSE}"
@@ -60,7 +62,7 @@ runs:
       # exchange it for a dex token
       DEX_URL="${{ inputs.argocd-server-url }}/api/dex/token"
       echo "getting access token from Dex: $DEX_URL"
-      if ! DEX_TOKEN_RESPONSE=$(curl -sS --fail-with-body \
+      if DEX_TOKEN_RESPONSE=$(curl -sS --fail-with-body \
           "$DEX_URL" \
           --user argo-cd-cli: \
           --data-urlencode "connector_id=github-actions" \
@@ -70,6 +72,8 @@ runs:
           --data-urlencode "subject_token=$GH_TOKEN" \
           --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token" \
       ); then
+        echo "DEX_TOKEN_RESPONSE request success"
+      else
         echo "DEX_TOKEN_RESPONSE request failed!"
         echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
         echo "${DEX_TOKEN_RESPONSE}"
