@@ -32,11 +32,13 @@ runs:
     id: idtoken
     shell: bash
     run: |-
+      set -euo pipefail
+
       # get an token from github
       echo "getting token from GitHub"
       GH_TOKEN_RESPONSE=$(curl -sSf \
-        "${{steps.script.outputs.IDTOKENURL}}" \
-        -H "Authorization: bearer  ${{steps.script.outputs.TOKEN}}" \
+        '${{ steps.script.outputs.IDTOKENURL }}' \
+        -H "Authorization: bearer  ${{ steps.script.outputs.TOKEN }}" \
         -H "Accept: application/json; api-version=2.0" \
         -H "Content-Type: application/json" \
         -d "{}" \
