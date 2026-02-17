@@ -1,0 +1,5 @@
+staging:
+  cluster1:
+    applicationFile: ./demo/staging-1.yml
+  cluster2:
+    applicationFile: ./demo/staging-2.yml

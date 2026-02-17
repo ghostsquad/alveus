@@ -43,15 +43,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
-      - uses: cssnr/toml-action@9e2cf02afd20567170966cdba32e68a523f9727f # v1.0.1
-        id: get-group
-        with:
-          file: ${{ inputs.alveus-file }}
-          path: '$.${{ inputs.destination-group }}'
       - uses: ./.github/actions/app-update
         with:
+          alveus-file: ${{ inputs.alveus-file }}
+          destination-group: ${{ inputs.destination-group }}
           target-revision: ${{ inputs.target-revision }}
-          group-data: ${{ steps.get-group.outputs.data }}
           commit-message: |-
             deploy(mock-staging): 🚀 to ${{ matrix.dest }}
 
@@ -66,7 +62,6 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      - uses: dcarbone/install-jq-action@b7ef57d46ece78760b4019dbc4080a1ba2a40b45 # v3.2.0
       # resolve specifics from destination vs input defaults
       - uses: ./.github/actions/setup-demo
         id: setup-demo

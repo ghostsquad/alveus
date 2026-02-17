@@ -5,8 +5,11 @@ inputs:
   target-revision:
     description: The target revision to deploy
     required: true
-  group-data:
-    description: JSON object
+  alveus-file:
+    description: The path to the alveus YAML file
+    required: true
+  destination-group:
+    description: The name of the destination group to update
     required: true
   namespace:
     description: Namespace to use. If empty, application will not be modified
@@ -54,26 +57,31 @@ runs:
   using: "composite"
   steps:
     - uses: frenck/action-setup-yq@c4b5be8b4a215c536a41d436757d9feb92836d4f # v1.0.2
-    - name: get group data
-      id: get-group-data
+    - name: get destination group data
+      id: get-destination-group-data
       shell: bash
       run: |-
         filename=${{ runner.temp }}/applications.json
-        echo '${{ inputs.group-data }}' > "${filename}"
-        echo "value=${filename}" >> $GITHUB_OUTPUT
+        echo 'destination-group: ${{ inputs.destination-group }}'
+        destination_data=$(yq '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
+        echo "${destination_data}"
+        destination_data_b64=$(echo -no "${destination_data}" | base64)
+        echo "value-b64=${destination_data_b64}" >> $GITHUB_OUTPUT
     - name: update-application-yaml
       shell: bash
       run: |-
-        group_data_file='${{ steps.get-group-data.outputs.value }}'
+        group_data_b64='${{ steps.get-group-data.outputs.value-64 }}'
+        group_data=$(echo "${group_data_b64}" | base64 --decode)
+        
         echo "<DEBUG>"
         echo ""
-        cat "${group_data_file}"
+        cat "${group_data}"
         echo ""
         echo "</DEBUG>"
         
-        readarray -t applications < <(jq --compact-output '.[]' '${group_data_file}')
+        readarray -t group_data_entries < <(echo "${group_data}" | jq --compact-output '. | to_entries')
         
-        for item in "${applications[@]}"; do
+        for item in "${group_data_entries[@]}"; do
           application_file=$(jq --raw-output '.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
