@@ -13,7 +13,7 @@ inputs:
     required: false
     default: "30"
   port-forward-log:
-    description: the path to the port-forward-log
+    description: the path to the port-forward-log (debugging)
     default: "/dev/null"
   dex-curl-options:
     description: curl options when making the request to dex
@@ -39,6 +39,17 @@ runs:
     shell: bash
     run: |-
       set -euo pipefail
+      
+      set +x
+
+      debug() {
+        local title="${1}"
+        local content="${2}"
+
+        echo "::group::DEBUG ${title}"
+        echo "${content}"
+        echo "::endgroup::"
+      }
 
       # get an token from github
       echo "getting token from GitHub"
@@ -52,15 +63,11 @@ runs:
         echo "GH_TOKEN request success"
       else
         echo "GH_TOKEN request failed!"
-        echo "::group::DEBUG GH_TOKEN_RESPONSE (RAW)"
-        echo "${GH_TOKEN_RESPONSE}"
-        echo "::endgroup::"
+        debug "GH_TOKEN_RESPONSE (RAW)" "${GH_TOKEN_RESPONSE}"
         exit 1
       fi
       
-      echo "::group::DEBUG GH_TOKEN_RESPONSE (RAW)"
-      echo "${GH_TOKEN_RESPONSE}"
-      echo "::endgroup::"
+      debug "GH_TOKEN_RESPONSE (RAW)" "${GH_TOKEN_RESPONSE}"
       
       GH_TOKEN=$(jq -r .value <<< $GH_TOKEN_RESPONSE)
       echo "::add-mask::$GH_TOKEN"
@@ -74,6 +81,13 @@ runs:
       DEX_URL="${{ inputs.argocd-server-url }}/api/dex/token"
       echo "getting access token from Dex: $DEX_URL"
       response_header_file='${{ runner.temp }}/dex-response-headers.txt'
+
+      debug_dex() {
+        debug "DEX_TOKEN_RESPONSE (RAW)" "${DEX_TOKEN_RESPONSE}"c
+        debug "dex response headers" $(cat "${response_header_file}")
+        debug "port-forward-log" $(cat '${{ inputs.port-forward-log }}')
+        debug "stern logs" $(stern argocd-server --no-follow)
+      }
       
       if DEX_TOKEN_RESPONSE=$(curl -v -sS --fail-with-body --dump-header "${response_header_file}" \
           ${{ inputs.dex-curl-options }} \
@@ -89,37 +103,14 @@ runs:
         echo "DEX_TOKEN_RESPONSE request success"
       else
         echo "DEX_TOKEN_RESPONSE request failed!"
-        echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
-        echo "${DEX_TOKEN_RESPONSE}"
-        echo "::endgroup::"
-      
-        echo "::group::DEBUG dex response headers"
-        cat "${response_header_file}"
-        echo "::endgroup::"
-      
-        echo "::group::DEBUG port-forward-log"
-        cat '${{ inputs.port-forward-log }}'
-        echo "::endgroup::"
-      
+
+        debug_dex
+
         exit 1
       fi
-      
-      echo "::group::DEBUG DEX_TOKEN_RESPONSE (RAW)"
-      echo "${DEX_TOKEN_RESPONSE}"
-      echo "::endgroup::"
-      
-      echo "::group::DEBUG DEX_TOKEN_RESPONSE (JSON)"
-      echo "${DEX_TOKEN_RESPONSE}" | jq '.'
-      echo "::endgroup::"
-      
-      echo "::group::DEBUG dex response headers"
-      cat "${response_header_file}"
-      echo "::endgroup::"
-      
-      echo "::group::DEBUG port-forward-log"
-      cat '${{ inputs.port-forward-log }}'
-      echo "::endgroup::"
-      
+
+      debug_dex
+
       DEX_TOKEN=$(jq -r .access_token <<< $DEX_TOKEN_RESPONSE)
 
       if [[ -z "$DEX_TOKEN" ]]; then
