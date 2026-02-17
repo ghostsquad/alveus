@@ -68,30 +68,31 @@ runs:
       run: |-
         echo 'destination-group: ${{ inputs.destination-group }}'
         destination_group_entries=$(yq --output-format=json '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
-        
+
         echo "<DEBUG destination_group_entries>"
         echo "${destination_group_entries}"
         echo "</DEBUG destination_group_entries>"
-        
-        destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
-        destination_group_entries_compact_single_line=$(echo "${destination_data_entries_compact}" | jq --compact-output '.') 
-        
-        echo "<DEBUG destination_group_entries_compact_single_line>"
-        echo "${destination_group_entries_compact_single_line}"
-        echo "</DEBUG destination_group_entries_compact_single_line>"
-        
-        echo "matrix-data=${destination_group_entries_compact_single_line}" >> $GITHUB_OUTPUT
-        
+
+        destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.')
+
         echo "<DEBUG destination_group_entries_compact>"
         echo "${destination_group_entries_compact}"
         echo "</DEBUG destination_group_entries_compact>"
+
+        echo "matrix-data=${destination_group_entries_compact}" >> $GITHUB_OUTPUT
         
+        destination_group_entries_loop=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
+        
+        echo "<DEBUG destination_group_entries_loop>"
+        echo "${destination_group_entries_loop}"
+        echo "</DEBUG destination_group_entries_loop>"
+
         while read item
         do  
           echo "<DEBUG item>"
           echo "${item}"
           echo "</DEBUG>"
-        
+
           application_file=$(jq --raw-output '.value.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
@@ -101,7 +102,7 @@ runs:
             yq e -i '.spec.destination.namespace = "${{ inputs.namespace }}"' \
             "${application_file}"
           fi
-        done < <(echo "${destination_group_entries_compact}")
+        done < <(echo "${destination_group_entries_loop}")
     - name: debug step output
       shell: bash
       run: |-
