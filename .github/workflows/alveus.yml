@@ -38,12 +38,13 @@ jobs:
   pre-deploy:
     runs-on: ubuntu-latest
     outputs:
-      group: ${{ steps.get-group.outputs.data }}
+      data: ${{ steps.app-update.outputs.data }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
       - uses: ./.github/actions/app-update
+        id: app-update
         with:
           alveus-file: ${{ inputs.alveus-file }}
           destination-group: ${{ inputs.destination-group }}
@@ -56,7 +57,7 @@ jobs:
     needs: pre-deploy
     strategy:
       matrix:
-        destination: ${{ needs.pre-deploy.outputs.group }}
+        destination: ${{ fromJSON(needs.pre-deploy.outputs.data)  }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -69,4 +70,4 @@ jobs:
       - uses: ./.github/actions/app-sync
         with:
           argocd-server-url: ${{ inputs.demo-mode && 'http://localhost:8080' || format('https://{0}', inputs.argocd-server-default) }}
-          application-file: ${{ matrix.destination }}
+          application-file: ${{ matrix.destination.applicationFile }}
