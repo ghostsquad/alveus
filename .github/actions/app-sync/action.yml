@@ -18,11 +18,20 @@ inputs:
   dex-curl-options:
     description: curl options when making the request to dex
     default: ""
+  mise-install:
+    description: whether or not to install mise and mise-managed tools (demo/debugging only)
+    default: "false"
 
 runs:
   using: "composite"
   steps:
   - uses: frenck/action-setup-yq@c4b5be8b4a215c536a41d436757d9feb92836d4f # v1.0.2
+  - uses: jdx/mise-action@v3
+    if: inputs.mise-install
+    with:
+      version: v2025.10.8
+      install: true
+      cache: true
   # Actions have access to two special environment variables ACTIONS_CACHE_URL and ACTIONS_RUNTIME_TOKEN.
   # Inline step scripts in workflows do not see these variables.
   - uses: actions/github-script@v6
@@ -86,7 +95,10 @@ runs:
         debug "DEX_TOKEN_RESPONSE (RAW)" "${DEX_TOKEN_RESPONSE}"c
         debug "dex response headers" $(cat "${response_header_file}")
         debug "port-forward-log" $(cat '${{ inputs.port-forward-log }}')
-        debug "stern logs" $(stern argocd-server --no-follow)
+      
+        if [ '${{ inputs.mise-install }}' == "true" ]; then
+          debug "stern logs" $(stern argocd-server --no-follow)
+        fi
       }
       
       if DEX_TOKEN_RESPONSE=$(curl -v -sS --fail-with-body --dump-header "${response_header_file}" \
