@@ -65,8 +65,8 @@ yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data."server.log.lev
 
 debug "argocd-cmd-params-cm" "$(yq 'select(.metadata.name == "argocd-cmd-params-cm") | .' $MYTMPDIR/install.yaml)"
 
-yq -i '(select(.metadata.name == "argocd-server" and .kind == "Deployment") | .spec.template.spec.containers[0].env | select(.name == "ARGOCD_SERVER_LOG_LEVEL")) |= del(.valueFrom)' $MYTMPDIR/install.yaml
-yq -i '(select(.metadata.name == "argocd-server" and .kind == "Deployment") | .spec.template.spec.containers[0].env | select(.name == "ARGOCD_SERVER_LOG_LEVEL") | .value) = "debug"' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-server" and .kind == "Deployment") | .spec.template.spec.containers[0].env[] | select(.name == "ARGOCD_SERVER_LOG_LEVEL")) |= del(.valueFrom)' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-server" and .kind == "Deployment") | .spec.template.spec.containers[0].env[] | select(.name == "ARGOCD_SERVER_LOG_LEVEL") | .value) = "debug"' $MYTMPDIR/install.yaml
 
 debug "argocd-server deployment" "$(yq 'select(.metadata.name == "argocd-server" and .kind == "Deployment") | .' $MYTMPDIR/install.yaml)"
 
