@@ -29,7 +29,8 @@ EOF
 yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv(dex_config)' $MYTMPDIR/install.yaml
 
 policy_csv=$(cat <<EOF
-p, repo:ghostsquad/alveus:pull_request, applications, *, podinfo-demo/*, allow
+p, repo:ghostsquad/alveus:pull_request, applications, action/*, *, allow
+p, repo:ghostsquad/alveus:ref:refs/heads/main, applications, action/*, *, allow
 EOF
 )
 
