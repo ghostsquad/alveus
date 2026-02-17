@@ -74,7 +74,13 @@ runs:
         echo "</DEBUG destination_group_entries>"
         
         destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
-        echo "matrix-data=${destination_data_entries_compact}" | jq --compact-output '.' >> $GITHUB_OUTPUT
+        destination_group_entries_compact_single_line=$(echo "${destination_data_entries_compact}" | jq --compact-output '.') 
+        
+        echo "<DEBUG destination_group_entries_compact_single_line>"
+        echo "${destination_group_entries_compact_single_line}"
+        echo "</DEBUG destination_group_entries_compact_single_line>"
+        
+        echo "matrix-data=${destination_group_entries_compact_single_line}" >> $GITHUB_OUTPUT
         
         echo "<DEBUG destination_group_entries_compact>"
         echo "${destination_group_entries_compact}"
