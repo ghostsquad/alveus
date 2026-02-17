@@ -67,10 +67,11 @@ jobs:
           persist-credentials: true
       # resolve specifics from destination vs input defaults
       - run: |-
-          IFS='' read -r -d '' matrix_data <<"EOF"
-            ${{ needs.pre-deploy.outputs.matrix-data }}
+          matrix_data=$(cat <<EOF
+          ${{ needs.pre-deploy.outputs.matrix-data }}
           EOF
-          
+          )
+
           echo "<DEBUG needs.pre-deploy.outputs.matrix-data>"
           echo "${matrix_data}"
           echo "</DEBUG needs.pre-deploy.outputs.matrix-data>"

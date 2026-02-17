@@ -11,7 +11,7 @@ kubectl create namespace argocd
 kubectl config set-context --current --namespace=argocd
 curl -sSL https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml -o $MYTMPDIR/install.yaml
 
-IFS='' read -r -d '' dex_config <<"EOF"
+dex_config=$(cat <<EOF
 connectors:
   - type: oidc
     id: github-actions
@@ -22,12 +22,14 @@ connectors:
       userNameKey: sub
       insecureSkipEmailVerified: true
 EOF
+)
 
 yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv(dex_config)' $MYTMPDIR/install.yaml
 
-IFS='' read -r -d '' policy_csv <<"EOF"
+policy_csv=$(cat <<EOF
 p, repo:ghostsquad/alveus:pull_request, applications, *, podinfo-demo/*, allow
 EOF
+)
 
 yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv(policy_csv)' $MYTMPDIR/install.yaml
 
@@ -60,4 +62,3 @@ kubectl port-forward svc/"${SERVICE_NAME}" -n "${SERVICE_NAMESPACE}" "${LOCAL_PO
 sleep 5
 
 echo "Port-forwarding established..."
-
