@@ -38,7 +38,7 @@ jobs:
   pre-deploy:
     runs-on: ubuntu-latest
     outputs:
-      data: ${{ steps.app-update.outputs.data }}
+      matrix-data: ${{ steps.app-update.outputs.matrix-data }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -57,7 +57,7 @@ jobs:
     needs: pre-deploy
     strategy:
       matrix:
-        destination: ${{ fromJSON(needs.pre-deploy.outputs.data)  }}
+        destination: ${{ fromJSON(needs.pre-deploy.outputs.matrix-data)  }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
