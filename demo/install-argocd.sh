@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 MYTMPDIR="$(mktemp -d)"
 trap '{ rm -rf -- "$MYTMPDIR"; }' EXIT
 
@@ -34,7 +36,7 @@ EOF
 yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv(policy_csv)' $MYTMPDIR/install.yaml
 
 kubectl apply -n argocd --server-side --force-conflicts -f $MYTMPDIR/install.yaml
-kubectl apply -n argocd --server-side --force-conflicts -f ./scripts/demo/project.yml
+kubectl apply -n argocd --server-side --force-conflicts -f "${SCRIPT_DIR}/project.yml"
 
 start=$EPOCHSECONDS
 while [ "$(kubectl get pods -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
