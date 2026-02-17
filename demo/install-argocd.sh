@@ -36,6 +36,10 @@ EOF
 yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv(policy_csv)' $MYTMPDIR/install.yaml
 
 kubectl apply -n argocd --server-side --force-conflicts -f $MYTMPDIR/install.yaml
+
+# let the CRDs finish installing
+sleep 5
+
 kubectl apply -n argocd --server-side --force-conflicts -f "${SCRIPT_DIR}/project.yml"
 
 start=$EPOCHSECONDS
