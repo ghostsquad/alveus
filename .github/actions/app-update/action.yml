@@ -100,15 +100,16 @@ runs:
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
       with:
         commit_message: ${{ inputs.commit-message }}
-        branch: ${{ inputs.branch }}
-        commit_options: ${{ inputs.commit-options }}
-        repository: ${{ inputs.repository }}
-        commit_user_name: ${{ inputs.commit-user-name }}
-        commit_user_email: ${{ inputs.commit-user-email }}
-        commit_author: ${{ inputs.commit-author }}
-        tag_name: ${{ inputs.tag-name }}
-        tagging_message: ${{ inputs.tagging-message }}
-        status_options: ${{ inputs.status-options }}
-        add_options: ${{ inputs.add-options }}
-        push_options: ${{ inputs.push-options }}
-        create_branch: ${{ inputs.create-branch }}
+# comment these out for debugging
+#        branch: ${{ inputs.branch }}
+#        commit_options: ${{ inputs.commit-options }}
+#        repository: ${{ inputs.repository }}
+#        commit_user_name: ${{ inputs.commit-user-name }}
+#        commit_user_email: ${{ inputs.commit-user-email }}
+#        commit_author: ${{ inputs.commit-author }}
+#        tag_name: ${{ inputs.tag-name }}
+#        tagging_message: ${{ inputs.tagging-message }}
+#        status_options: ${{ inputs.status-options }}
+#        add_options: ${{ inputs.add-options }}
+#        push_options: ${{ inputs.push-options }}
+#        create_branch: ${{ inputs.create-branch }}
