@@ -7,6 +7,17 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 MYTMPDIR="$(mktemp -d)"
 trap '{ rm -rf -- "$MYTMPDIR"; }' EXIT
 
+debug() {
+  set +x
+  local title="${1}"
+  local content="${2}"
+
+  echo "::group::DEBUG ${title}"
+  echo "${content}"
+  echo "::endgroup::"
+  set -x
+}
+
 set -x
 
 kubectl create namespace argocd
@@ -28,9 +39,7 @@ EOF
 
 yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv("DEX_CONFIG")' $MYTMPDIR/install.yaml
 
-echo "::group::DEBUG argocd-cm"
-yq 'select(.metadata.name == "argocd-cm") | .' $MYTMPDIR/install.yaml
-echo "::endgroup::"
+debug "argocd-cm" "$(yq 'select(.metadata.name == "argocd-cm") | .' $MYTMPDIR/install.yaml)"
 
 export POLICY_CSV=$(cat <<EOF
 p, repo:ghostsquad/alveus:pull_request, applications, action/*, *, allow
@@ -40,9 +49,7 @@ EOF
 
 yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv("POLICY_CSV")' $MYTMPDIR/install.yaml
 
-echo "::group::DEBUG argocd-rbac-cm"
-yq 'select(.metadata.name == "argocd-rbac-cm") | .' $MYTMPDIR/install.yaml
-echo "::endgroup::"
+debug "argocd-rbac-cm" "$(yq 'select(.metadata.name == "argocd-rbac-cm") | .' $MYTMPDIR/install.yaml)"
 
 #https://github.com/argoproj/argo-cd/pull/17331/changes
 #- name: ARGOCD_API_CONTENT_TYPES
@@ -56,9 +63,7 @@ echo "::endgroup::"
 yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data."server.api.content.types") = ""' $MYTMPDIR/install.yaml
 yq -i '(select(.metadata.name == "argocd-cmd-params-cm") | .data."server.log.level") = "trace"' $MYTMPDIR/install.yaml
 
-echo "::group::DEBUG argocd-cmd-params-cm"
-yq 'select(.metadata.name == "argocd-cmd-params-cm") | .' $MYTMPDIR/install.yaml
-echo "::endgroup::"
+debug "argocd-cmd-params-cm" "$(yq 'select(.metadata.name == "argocd-cmd-params-cm") | .' $MYTMPDIR/install.yaml)"
 
 kubectl apply -n argocd --server-side --force-conflicts -f $MYTMPDIR/install.yaml
 
@@ -67,14 +72,20 @@ sleep 5
 
 kubectl apply -n argocd --server-side --force-conflicts -f "${SCRIPT_DIR}/project.yml"
 
+# restart the server, as maybe there's a race condition during install
+echo "restarting argocd-server"
+kubectl rollout restart deployment/argocd-server
+
 start=$EPOCHSECONDS
 while ! [[ "$(kubectl get pods -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" =~ ^(true ?)+$ ]]; do
+    set +x
     if (( EPOCHSECONDS-start > 60 )); then
       echo "Timed out waiting for ArgoCD to be ready"
       exit 1
     fi
     sleep 5
     echo "Waiting for ArgoCD to be ready."
+    set -x
 done
 
 SERVICE_NAME="argocd-server"
