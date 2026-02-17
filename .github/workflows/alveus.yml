@@ -72,9 +72,9 @@ jobs:
           EOF
           )
 
-          echo "<DEBUG needs.pre-deploy.outputs.matrix-data>"
+          echo "::group::DEBUG needs.pre-deploy.outputs.matrix-data>"
           echo "${matrix_data}"
-          echo "</DEBUG needs.pre-deploy.outputs.matrix-data>"
+          echo "::endgroup::"
       - uses: ./.github/actions/setup-demo
         id: setup-demo
         if: inputs.demo-mode
@@ -82,3 +82,4 @@ jobs:
         with:
           argocd-server-url: ${{ inputs.demo-mode && 'http://localhost:8080' || format('https://{0}', inputs.argocd-server-default) }}
           application-file: ${{ matrix.destination.applicationFile }}
+          port-forward-log: ${{ steps.setup-demo.outputs.port-forward-log }}

@@ -68,6 +68,6 @@ nohup kubectl port-forward svc/"${SERVICE_NAME}" -n "${SERVICE_NAMESPACE}" "${LO
 # Give the port-forward process a moment to establish
 sleep 5
 
-echo "portforward_log=${PORT_FORWARD_LOG}" >> $GITHUB_OUTPUT
+echo "port-forward-log=${PORT_FORWARD_LOG}" >> $GITHUB_OUTPUT
 
 echo "Port-forwarding ${LOCAL_PORT}:${SERVICE_PORT} established..."
