@@ -56,7 +56,7 @@ inputs:
 outputs:
   matrix-data:
     description: entries of the destination group (an array) for use with a matrix job
-    value: ${{ steps.update-application-yaml.outputs.data }}
+    value: ${{ steps.update-application-yaml.outputs.matrix-data }}
 
 runs:
   using: "composite"
@@ -73,16 +73,19 @@ runs:
         
         echo "<DEBUG>"
         echo ""
-        echo "${group_data}"
+        echo "${destination_data}"
         echo ""
         echo "</DEBUG>"
         
-        group_data_entries_compact=$(echo "${group_data}" | jq --compact-output '. | to_entries')
-        echo "data=${group_data_entries_compact}" >> $GITHUB_OUTPUT
+        destination_data_entries_compact=$(echo "${destination_data}" | jq --compact-output '. | to_entries')
         
-        readarray -t group_data_entries < <(echo "${group_data_entries_compact}" | jq '.')
+        echo "saving the following 
         
-        for item in "${group_data_entries[@]}"; do
+        echo "matrix-data=${destination_data_entries_compact}" >> $GITHUB_OUTPUT
+        
+        readarray -t destination_data_entries < <(echo "${destination_data_entries_compact}" | jq '.')
+        
+        for item in "${destination_data_entries[@]}"; do
           application_file=$(jq --raw-output '.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
