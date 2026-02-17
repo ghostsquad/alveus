@@ -70,26 +70,20 @@ runs:
         destination_group_entries=$(yq --output-format=json '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
         
         echo "<DEBUG destination_group_entries>"
-        echo ""
         echo "${destination_group_entries}"
-        echo ""
         echo "</DEBUG destination_group_entries>"
         
         destination_group_entries_compact=$(echo "${destination_group_entries}" | jq --compact-output '.[]')
         echo "matrix-data=${destination_data_entries_compact}" >> $GITHUB_OUTPUT
         
         echo "<DEBUG destination_group_entries_compact>"
-        echo ""
         echo "${destination_group_entries_compact}"
-        echo ""
         echo "</DEBUG destination_group_entries_compact>"
         
         while read item
         do  
           echo "<DEBUG item>"
-          echo ""
           echo "${item}"
-          echo ""
           echo "</DEBUG>"
         
           application_file=$(jq --raw-output '.value.applicationFile' <<< "$item")
@@ -101,7 +95,7 @@ runs:
             yq e -i '.spec.destination.namespace = "${{ inputs.namespace }}"' \
             "${application_file}"
           fi
-        done < <(echo "${destination_data_entries_compact}" | jq --compact-output '.[]')
+        done < <(echo "${destination_data_entries_compact}")
 
     - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
       with:
