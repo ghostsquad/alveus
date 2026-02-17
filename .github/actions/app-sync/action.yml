@@ -92,12 +92,12 @@ runs:
       response_header_file='${{ runner.temp }}/dex-response-headers.txt'
 
       debug_dex() {
-        debug "DEX_TOKEN_RESPONSE (RAW)" "${DEX_TOKEN_RESPONSE}"c
-        debug "dex response headers" $(cat "${response_header_file}")
-        debug "port-forward-log" $(cat '${{ inputs.port-forward-log }}')
+        debug "DEX_TOKEN_RESPONSE (RAW)" "${DEX_TOKEN_RESPONSE}"
+        debug "dex response headers" "$(cat "${response_header_file}")"
+        debug "port-forward-log" "$(cat '${{ inputs.port-forward-log }}')"
       
         if [ '${{ inputs.mise-install }}' == "true" ]; then
-          debug "stern logs" $(stern argocd-server --no-follow)
+          debug "stern logs" "$(stern argocd-server --no-follow)"
         fi
       }
       
