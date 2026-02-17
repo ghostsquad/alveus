@@ -65,7 +65,7 @@ runs:
         echo 'destination-group: ${{ inputs.destination-group }}'
         destination_data=$(yq '.${{ inputs.destination-group }} | to_entries' '${{ inputs.alveus-file }}')
         echo "${destination_data}"
-        destination_data_b64=$(echo -no "${destination_data}" | base64)
+        destination_data_b64=$(echo -n "${destination_data}" | base64)
         echo "value-b64=${destination_data_b64}" >> $GITHUB_OUTPUT
     - name: update-application-yaml
       shell: bash
