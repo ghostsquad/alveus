@@ -26,7 +26,11 @@ connectors:
 EOF
 )
 
-yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv(dex_config)' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv("dex_config")' $MYTMPDIR/install.yaml
+
+echo "::group::DEBUG argocd-cm"
+yq 'select(.metadata.name == "argocd-cm") | .' $MYTMPDIR/install.yaml
+echo "::endgroup::"
 
 policy_csv=$(cat <<EOF
 p, repo:ghostsquad/alveus:pull_request, applications, action/*, *, allow
@@ -34,7 +38,11 @@ p, repo:ghostsquad/alveus:ref:refs/heads/main, applications, action/*, *, allow
 EOF
 )
 
-yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv(policy_csv)' $MYTMPDIR/install.yaml
+yq -i '(select(.metadata.name == "argocd-rbac-cm") | .data."policy.csv") = strenv("policy_csv")' $MYTMPDIR/install.yaml
+
+echo "::group::DEBUG argocd-rbac-cm"
+yq 'select(.metadata.name == "argocd-rbac-cm") | .' $MYTMPDIR/install.yaml
+echo "::endgroup::"
 
 kubectl apply -n argocd --server-side --force-conflicts -f $MYTMPDIR/install.yaml
 
