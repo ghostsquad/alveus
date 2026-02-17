@@ -28,3 +28,4 @@ runs:
       shell: bash
       env:
         KIND_CLUSTER_NAME: ${{ inputs.cluster-name }}
+        PORT_FORWARD_TEMP_DIR: ${{ runner.temp }}
