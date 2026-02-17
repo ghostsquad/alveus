@@ -64,15 +64,22 @@ runs:
     - name: update-application-yaml
       shell: bash
       run: |-
-        readarray -t applications < <(jq --compact-output '.[]' '${{ steps.get-group-data.outputs.value }}')
+        group_data_file='${{ steps.get-group-data.outputs.value }}'
+        echo "<DEBUG>"
+        echo ""
+        cat "${group_data_file}"
+        echo ""
+        echo "</DEBUG>"
+        
+        readarray -t applications < <(jq --compact-output '.[]' '${group_data_file}')
         
         for item in "${applications[@]}"; do
           application_file=$(jq --raw-output '.applicationFile' <<< "$item")
           echo "updating application file: ${application_file}..."
           yq e -i '.spec.source.targetRevision = "${{ inputs.target-revision }}"' \
             "${application_file}"
-        
-          if [ -n "${{ inputs.namespace }}" ]; then
+
+          if [ -n '${{ inputs.namespace }}' ]; then
             yq e -i '.spec.destination.namespace = "${{ inputs.namespace }}"' \
             "${application_file}"
           fi
