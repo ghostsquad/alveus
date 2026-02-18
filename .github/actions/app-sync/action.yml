@@ -97,7 +97,7 @@ runs:
         debug "port-forward-log" "$(cat '${{ inputs.port-forward-log }}')"
       
         if [ '${{ inputs.mise-install }}' == "true" ]; then
-          debug "stern logs" "$(stern argocd-server --no-follow)"
+          debug "stern logs" "$(stern * --no-follow)"
         fi
       }
       
