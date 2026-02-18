@@ -39,6 +39,15 @@ EOF
 
 yq -i '(select(.metadata.name == "argocd-cm") | .data."dex.config") = strenv("DEX_CONFIG")' $MYTMPDIR/install.yaml
 
+# if the URL is not set, dex is "not configured"
+# the error message
+# https://github.com/argoproj/argo-cd/blob/a1d68ca46580f1326b499125df285350fd4ae61b/cmd/argocd-dex/commands/argocd_dex.go#L109
+# The function to generate the DEX configuration
+# https://github.com/argoproj/argo-cd/blob/a1d68ca46580f1326b499125df285350fd4ae61b/util/dex/config.go#L17
+# The smoking gun
+# https://github.com/argoproj/argo-cd/blob/master/util/settings/settings.go#L1780
+yq -i '(select(.metadata.name == "argocd-cm") | .data."url") = "https://localhost:8080"' $MYTMPDIR/install.yaml
+
 debug "argocd-cm" "$(yq 'select(.metadata.name == "argocd-cm") | .' $MYTMPDIR/install.yaml)"
 
 export POLICY_CSV=$(cat <<EOF
